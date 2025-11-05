@@ -4,12 +4,14 @@
 #include <array>
 #include <cstdint>
 
+#include "platform.hpp"
+
 #include <glm/vec3.hpp>
 #include <glm/vec4.hpp>
 
-#include "window.hpp"
+//#include "clock.hpp"
+#include "constants.hpp"
 
-constexpr size_t OBJECT_COUNT = 256;
 constexpr size_t INDEX_COUNT = 36;
 constexpr size_t VERTEX_COUNT = 24;
 
@@ -67,11 +69,14 @@ struct Renderer {
     std::array<glm::vec4, OBJECT_COUNT> positions;
     std::array<glm::vec4, OBJECT_COUNT> colors;
     std::array<glm::vec4, OBJECT_COUNT> sizes;
+
+//    Clock clock;
 };
 
 void init(Renderer& renderer);
-void run_message_loop(Window& window, Renderer& renderer);
+void run_message_loop(HWND hwnd, HDC hdc, Renderer& renderer);
 void draw(const Renderer& renderer);
 void setup(const Renderer& renderer);
+void update_array_buffer(Renderer& renderer);
 
 #endif

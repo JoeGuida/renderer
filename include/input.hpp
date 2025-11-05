@@ -2,10 +2,15 @@
 #define GL_RENDERER_INPUT_HPP
 
 #include <array>
+#include <span>
 #include <string>
 #include <unordered_map>
 
-#include <Windows.h>
+#include "platform.hpp"
+
+#include <glm/vec3.hpp>
+
+class Context;
 
 enum class ScanCode : USHORT {
     A = 30,
@@ -47,6 +52,12 @@ enum class KeyCode : USHORT {
     Undefined
 };
 
+enum class KeyState {
+    Up,
+    Down,
+    Undefined
+};
+
 static std::unordered_map<ScanCode, KeyCode> keybindings {
     { ScanCode::W, KeyCode::Forward },
     { ScanCode::S, KeyCode::Back },
@@ -59,11 +70,19 @@ static std::unordered_map<ScanCode, KeyCode> keybindings {
 struct Input {
     std::array<RAWINPUTDEVICE, 2> devices;
     bool initialized;
+    glm::vec3 mouse_position;
+
+    bool is_forward_pressed = false;
+    bool is_back_pressed = false;
+    bool is_left_pressed = false;
+    bool is_right_pressed = false;
 };
 
 KeyCode get_keycode(ScanCode scancode);
 void remap(KeyCode keycode, ScanCode scancode);
 void setup_input_devices(Input& input, HWND hwnd);
-void handle_inputs(Input& input, LPARAM lparam, HWND hwnd);
+void handle_inputs(Input& input, LPARAM lparam, HWND hwnd, Context& context);
+void keypress(KeyCode key, KeyState state, HWND hwnd, Context& context);
+glm::vec3 get_direction(const Input& input);
 
 #endif

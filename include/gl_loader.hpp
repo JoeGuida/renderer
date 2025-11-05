@@ -1,7 +1,8 @@
 #ifndef GL_RENDERER_GL_LOADER_HPP
 #define GL_RENDERER_GL_LOADER_HPP
 
-#include <Windows.h>
+#include "platform.hpp"
+
 #include <GL/gl.h>
 
 #include <opengl/glcorearb.h>

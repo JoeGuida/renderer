@@ -20,7 +20,7 @@ void init(Renderer& renderer) {
     renderer.count = 0;
 }
 
-void run_message_loop(Window& window, Renderer& renderer) {
+void run_message_loop(HWND hwnd, HDC hdc, Renderer& renderer) {
     MSG message;
     ZeroMemory(&message, sizeof(MSG));
     while (true) {
@@ -34,7 +34,7 @@ void run_message_loop(Window& window, Renderer& renderer) {
         }
         else {
             RECT client_rect;
-            GetClientRect(window.hwnd, &client_rect);
+            GetClientRect(hwnd, &client_rect);
 
             int client_width = client_rect.right - client_rect.left;
             int client_height = client_rect.bottom - client_rect.top;
@@ -44,14 +44,18 @@ void run_message_loop(Window& window, Renderer& renderer) {
             glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
             glBindVertexArray(renderer.vao);
+
             draw(renderer); 
 
-            SwapBuffers(window.hdc);
+            SwapBuffers(hdc);
         }
     }
 }
 
 void draw(const Renderer& renderer) {
+//    time_point now = std::chrono::system_clock::now();
+//    renderer.clock.delta_time = now - renderer.clock.last_frame_time;
+//    renderer.clock.last_frame_time = now;
     glUseProgram(renderer.shader);
     glDrawElementsInstanced(GL_TRIANGLES, renderer.indices.size(), GL_UNSIGNED_INT, 0, renderer.count); 
 }
@@ -73,3 +77,10 @@ void setup(const Renderer& renderer) {
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(glm::vec3), (void*)0);
     glEnableVertexAttribArray(0);
 }
+
+void update_array_buffer(Renderer& renderer) {
+    glBindVertexArray(renderer.vao);
+    glBindBuffer(GL_UNIFORM_BUFFER, renderer.ubo);
+    glBufferSubData(GL_UNIFORM_BUFFER, 0, POSITIONS_SIZE, renderer.positions.data());
+}
+

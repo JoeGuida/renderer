@@ -3,10 +3,11 @@
 #include <expected>
 #include <string>
 
-#include <windows.h>
+#include "platform.hpp"
 
 #include <spdlog/spdlog.h>
 
+#include "context.hpp"
 #include "gl_loader.hpp"
 
 LRESULT CALLBACK window_proc(HWND hwnd, UINT message, WPARAM wparam, LPARAM lparam) {
@@ -14,20 +15,19 @@ LRESULT CALLBACK window_proc(HWND hwnd, UINT message, WPARAM wparam, LPARAM lpar
         case WM_CREATE: {
             LPCREATESTRUCT p_create_struct = reinterpret_cast<LPCREATESTRUCT>(lparam);
             SetWindowLongPtr(hwnd, GWLP_USERDATA, reinterpret_cast<LONG_PTR>(p_create_struct->lpCreateParams));
-            Input* input = reinterpret_cast<Input*>(GetWindowLongPtr(hwnd, GWLP_USERDATA));
-            if(input && !input->initialized) {
-                setup_input_devices(*input, hwnd);
-                input->initialized = true;
+            Context* context = reinterpret_cast<Context*>(GetWindowLongPtr(hwnd, GWLP_USERDATA));
+            if(context->input && !context->input->initialized) {
+                setup_input_devices(*context->input, hwnd);
+                context->input->initialized = true;
             }
 
             return 0;
         }
         case WM_INPUT: {
-            Input* input = reinterpret_cast<Input*>(GetWindowLongPtr(hwnd, GWLP_USERDATA));
-            if(input && input->initialized) {
-                handle_inputs(*input, lparam, hwnd);
+            Context* context = reinterpret_cast<Context*>(GetWindowLongPtr(hwnd, GWLP_USERDATA));
+            if(context->input && context->input->initialized) {
+                handle_inputs(*context->input, lparam, hwnd, *context);
             }
-
             return 0;
         }
         case WM_DESTROY: {
@@ -41,7 +41,7 @@ LRESULT CALLBACK window_proc(HWND hwnd, UINT message, WPARAM wparam, LPARAM lpar
 
 std::expected<Window, std::string> initialize_window(HINSTANCE instance, int show_window_flags, 
                                                      int width, int height, 
-                                                     const wchar_t* class_name, const wchar_t* window_title, Input& input) 
+                                                     const wchar_t* class_name, const wchar_t* window_title, Context& context) 
 {
     WNDCLASSEX window_class {
         .cbSize = sizeof(WNDCLASSEX),
@@ -65,7 +65,7 @@ std::expected<Window, std::string> initialize_window(HINSTANCE instance, int sho
 
     HWND hwnd = CreateWindowEx(NULL, class_name, window_title, WS_OVERLAPPEDWINDOW, 
                                  CW_USEDEFAULT, CW_USEDEFAULT, width, height, 
-                                 NULL, NULL, instance, &input);
+                                 NULL, NULL, instance, &context);
 
     if (!hwnd) {
         return std::unexpected("error creating window");

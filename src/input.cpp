@@ -1,12 +1,16 @@
 #include "input.hpp"
 
-#include <Windows.h>
+#include "platform.hpp"
+
 #include <hidsdi.h>
 #include <SetupAPI.h>
 
 #include <winuser.h>
 
 #include <spdlog/spdlog.h>
+
+#include "context.hpp"
+#include "convert.hpp"
 
 KeyCode get_keycode(ScanCode scancode) {
     return keybindings[scancode];
@@ -36,7 +40,7 @@ void setup_input_devices(Input& input, HWND hwnd) {
     }
 }
 
-void handle_inputs(Input& input, LPARAM lparam, HWND hwnd) {
+void handle_inputs(Input& input, LPARAM lparam, HWND hwnd, Context& context) {
     UINT dw_size;
     GetRawInputData((HRAWINPUT)lparam, RID_INPUT, NULL, &dw_size, sizeof(RAWINPUTHEADER));
     LPBYTE lpb = new BYTE[dw_size];
@@ -53,41 +57,53 @@ void handle_inputs(Input& input, LPARAM lparam, HWND hwnd) {
         return;
     }
 
-    TCHAR szTempOutput[256];
     if(raw->header.dwType == RIM_TYPEKEYBOARD) {
-        if((raw->data.keyboard.Flags & RI_KEY_BREAK) == 0) {
-            ScanCode scancode = static_cast<ScanCode>(raw->data.keyboard.MakeCode);
-            KeyCode keycode = get_keycode(scancode);
-            switch(keycode) {
-                case KeyCode::Quit: {
-                    DestroyWindow(hwnd);
-                    break;
-                }
-                case KeyCode::Forward: {
-                   break; 
-                }
-                case KeyCode::Back: {
-                   break; 
-                }
-                case KeyCode::Left: {
-                   break; 
-                }
-                case KeyCode::Right: {
-                   break; 
-                }
-                default: {
-                    break;
-                }
-            }
-        }
-    }
+        ScanCode scancode = static_cast<ScanCode>(raw->data.keyboard.MakeCode);
+        KeyCode keycode = get_keycode(scancode);
+        KeyState state = KeyState::Undefined;
 
-    if(raw->header.dwType == RIM_TYPEMOUSE) {
-        if(raw->data.mouse.usFlags == MOUSE_MOVE_RELATIVE) {
-            // do something with mouse movement
+        if((raw->data.keyboard.Flags & RI_KEY_MAKE) == 0) {
+            state = KeyState::Down;
+        } 
+        else if((raw->data.keyboard.Flags & RI_KEY_BREAK) == 0) {
+           state = KeyState::Up; 
+        }
+
+        if(keycode != KeyCode::Undefined || state != KeyState::Undefined) {
+            keypress(keycode, state, hwnd, context);
         }
     }
 
     delete[] lpb;
+}
+
+void keypress(KeyCode key, KeyState state, HWND hwnd, Context& context) {
+    Input& input = *context.input;
+
+    switch(key) {
+        case KeyCode::Quit: {
+            DestroyWindow(hwnd);
+            break;
+        }
+        case KeyCode::Forward: {
+            input.is_forward_pressed = (state == KeyState::Up) ? false : true;
+            break; 
+        }
+        case KeyCode::Back: {
+            input.is_back_pressed = (state == KeyState::Up) ? false : true;
+            break; 
+        }
+        case KeyCode::Left: {
+            input.is_left_pressed = (state == KeyState::Up) ? false : true;
+            break; 
+        }
+        case KeyCode::Right: {
+            input.is_right_pressed = (state == KeyState::Up) ? false : true;
+            break; 
+        }
+        default: {
+            break;
+        }
+    }
 }
  

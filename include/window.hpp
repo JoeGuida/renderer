@@ -4,9 +4,9 @@
 #include <expected>
 #include <string>
 
-#include <windows.h>
+#include "platform.hpp"
 
-#include "input.hpp"
+#include "context.hpp"
 
 struct Window {
     HWND hwnd;
@@ -19,7 +19,7 @@ struct Window {
 LRESULT CALLBACK window_proc(HWND hwnd, UINT message, WPARAM wparam, LPARAM lparam);
 std::expected<Window, std::string> initialize_window(HINSTANCE instance, int show_window_flags, 
                                                     int width, int height, 
-                                                    const wchar_t* class_name, const wchar_t* window_title, Input& input);
+                                                    const wchar_t* class_name, const wchar_t* window_title, Context& context);
 
 #endif
 
