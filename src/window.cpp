@@ -9,6 +9,55 @@
 
 #include "context.hpp"
 #include "gl_loader.hpp"
+#include "renderer.hpp"
+
+void run_message_loop(HWND hwnd, HDC hdc, Context& context) {
+    MSG message;
+    ZeroMemory(&message, sizeof(MSG));
+    while (true) {
+        if (PeekMessage(&message, NULL, 0, 0, PM_REMOVE)) {
+            if (message.message == WM_QUIT) {
+                break;
+            }
+
+            TranslateMessage(&message);
+            DispatchMessage(&message);
+        }
+        else {
+            RECT client_rect;
+            GetClientRect(hwnd, &client_rect);
+
+            int client_width = client_rect.right - client_rect.left;
+            int client_height = client_rect.bottom - client_rect.top;
+
+            glViewport(0, 0, client_width, client_height);
+            glClearColor(0.2f, 0.2f, 0.2f, 1.0f);
+            glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+            glBindVertexArray(context.renderer->vao);
+
+            glm::vec4 direction(0.0f);
+            float velocity = 0.01f;
+            if(context.input->is_forward_pressed) {
+                direction += glm::vec4(0.0f, 1.0f, 0.0f, 0.0f) * velocity;
+            }
+            if(context.input->is_back_pressed) {
+                direction += glm::vec4(0.0f, -1.0f, 0.0f, 0.0f) * velocity;
+            }
+            if(context.input->is_left_pressed) {
+                direction += glm::vec4(-1.0f, 0.0f, 0.0f, 0.0f) * velocity;
+            }
+            if(context.input->is_right_pressed) {
+                direction += glm::vec4(1.0f, 0.0f, 0.0f, 0.0f) * velocity;
+            }
+
+            update_positions(*context.renderer, 0, direction);
+            draw(*context.renderer); 
+
+            SwapBuffers(hdc);
+        }
+    }
+}
 
 LRESULT CALLBACK window_proc(HWND hwnd, UINT message, WPARAM wparam, LPARAM lparam) {
     switch (message) {

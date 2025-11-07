@@ -69,17 +69,15 @@ void handle_inputs(Input& input, LPARAM lparam, HWND hwnd, Context& context) {
            state = KeyState::Up; 
         }
 
-        if(keycode != KeyCode::Undefined || state != KeyState::Undefined) {
-            keypress(keycode, state, hwnd, context);
+        if(keycode != KeyCode::Undefined && state != KeyState::Undefined) {
+            keypress(keycode, state, hwnd, *context.input);
         }
     }
 
     delete[] lpb;
 }
 
-void keypress(KeyCode key, KeyState state, HWND hwnd, Context& context) {
-    Input& input = *context.input;
-
+void keypress(KeyCode key, KeyState state, HWND hwnd, Input& input) {
     switch(key) {
         case KeyCode::Quit: {
             DestroyWindow(hwnd);

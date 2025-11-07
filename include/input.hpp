@@ -82,7 +82,7 @@ KeyCode get_keycode(ScanCode scancode);
 void remap(KeyCode keycode, ScanCode scancode);
 void setup_input_devices(Input& input, HWND hwnd);
 void handle_inputs(Input& input, LPARAM lparam, HWND hwnd, Context& context);
-void keypress(KeyCode key, KeyState state, HWND hwnd, Context& context);
+void keypress(KeyCode key, KeyState state, HWND hwnd, Input& input);
 glm::vec3 get_direction(const Input& input);
 
 #endif

@@ -50,16 +50,17 @@ int WinMain(HINSTANCE instance, HINSTANCE unused, LPSTR command_line, int show_w
         .renderer = &renderer
     };
 
-    auto window = initialize_window(instance, show_window, SCREEN_WIDTH, SCREEN_HEIGHT, L"class_name", L"Warp Renderer", context);
-    if(!window.has_value()) {
-        spdlog::error("error initializing window :: {}", window.error());
+    auto initialized_window = initialize_window(instance, show_window, SCREEN_WIDTH, SCREEN_HEIGHT, L"class_name", L"Renderer", context);
+    if(!initialized_window.has_value()) {
+        spdlog::error("error initializing window :: {}", initialized_window.error());
     }
+    Window& window = initialized_window.value();
 
     init(renderer);
 
     // cube
     glm::vec3 pos(0.0f);
-    glm::vec3 color(1.0f, 0.0f, 0.0f);
+    glm::vec3 color(0.15f, 0.15f, 0.15f);
     float size = 0.2f;
 
     renderer.positions[renderer.count] = to_vec4(pos);
@@ -99,7 +100,7 @@ int WinMain(HINSTANCE instance, HINSTANCE unused, LPSTR command_line, int show_w
     renderer.shader = shader.value();
 
     setup(renderer);
-    run_message_loop(window.value().hwnd, window.value().hdc, renderer);
+    run_message_loop(window.hwnd, window.hdc, context);
 
     return 0;
 }

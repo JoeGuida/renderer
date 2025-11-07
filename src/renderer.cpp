@@ -20,42 +20,7 @@ void init(Renderer& renderer) {
     renderer.count = 0;
 }
 
-void run_message_loop(HWND hwnd, HDC hdc, Renderer& renderer) {
-    MSG message;
-    ZeroMemory(&message, sizeof(MSG));
-    while (true) {
-        if (PeekMessage(&message, NULL, 0, 0, PM_REMOVE)) {
-            if (message.message == WM_QUIT) {
-                break;
-            }
-
-            TranslateMessage(&message);
-            DispatchMessage(&message);
-        }
-        else {
-            RECT client_rect;
-            GetClientRect(hwnd, &client_rect);
-
-            int client_width = client_rect.right - client_rect.left;
-            int client_height = client_rect.bottom - client_rect.top;
-
-            glViewport(0, 0, client_width, client_height);
-            glClearColor(0.2f, 0.2f, 0.2f, 1.0f);
-            glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-            glBindVertexArray(renderer.vao);
-
-            draw(renderer); 
-
-            SwapBuffers(hdc);
-        }
-    }
-}
-
 void draw(const Renderer& renderer) {
-//    time_point now = std::chrono::system_clock::now();
-//    renderer.clock.delta_time = now - renderer.clock.last_frame_time;
-//    renderer.clock.last_frame_time = now;
     glUseProgram(renderer.shader);
     glDrawElementsInstanced(GL_TRIANGLES, renderer.indices.size(), GL_UNSIGNED_INT, 0, renderer.count); 
 }
@@ -76,6 +41,11 @@ void setup(const Renderer& renderer) {
 
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(glm::vec3), (void*)0);
     glEnableVertexAttribArray(0);
+}
+
+void update_positions(Renderer& renderer, uint32_t id, const glm::vec4& direction) {
+    renderer.positions[id] += direction;
+    update_array_buffer(renderer);
 }
 
 void update_array_buffer(Renderer& renderer) {
