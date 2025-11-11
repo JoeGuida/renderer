@@ -4,6 +4,7 @@
 #include <opengl/glcorearb.h>
 
 #include "gl_loader.hpp"
+#include "shader.hpp"
 
 void init(Renderer& renderer) {
     glGenVertexArrays(1, &renderer.vao);
@@ -45,12 +46,11 @@ void setup(const Renderer& renderer) {
 
 void update_positions(Renderer& renderer, uint32_t id, const glm::vec4& direction) {
     renderer.positions[id] += direction;
-    update_array_buffer(renderer);
-}
 
-void update_array_buffer(Renderer& renderer) {
+    // udpate buffers
     glBindVertexArray(renderer.vao);
     glBindBuffer(GL_UNIFORM_BUFFER, renderer.ubo);
     glBufferSubData(GL_UNIFORM_BUFFER, 0, POSITIONS_SIZE, renderer.positions.data());
+
 }
 

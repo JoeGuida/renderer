@@ -7,5 +7,4 @@
     #include <platform/linux.hpp>
 #endif
 
-
 #endif

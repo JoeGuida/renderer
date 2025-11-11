@@ -25,5 +25,6 @@ struct Camera {
 };
 
 glm::mat4 projection_matrix(const Camera& camera);
+void move_camera(Camera& camera, const glm::vec3& direction);
 
 #endif

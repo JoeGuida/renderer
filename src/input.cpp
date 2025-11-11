@@ -1,46 +1,40 @@
 #include "input.hpp"
 
-#include "platform.hpp"
-
-#include <hidsdi.h>
-#include <SetupAPI.h>
-
-#include <winuser.h>
-
 #include <spdlog/spdlog.h>
 
-#include "context.hpp"
-#include "convert.hpp"
-
-KeyCode get_keycode(ScanCode scancode) {
-    return keybindings[scancode];
+void Input::bind(KeyCode key, const std::function<void()>& function) {
+    input_map[key] = function;
 }
 
-void remap(KeyCode keycode, ScanCode scancode) {
-    keybindings[scancode] = keycode; 
+std::optional<KeyCode> Input::get_keycode(ScanCode scancode) {
+    if(key_bindings.contains(scancode)) {
+        return key_bindings[scancode];
+    }
+
+    return std::nullopt;
 }
 
-void setup_input_devices(Input& input, HWND hwnd) {
-    input.devices[0] = {
+void Input::setup_input_devices(HWND hwnd) {
+    devices[0] = {
         .usUsagePage = 0x01, // HID_USAGE_PAGE_GENERIC
         .usUsage = 0x06,     // HID_USAGE_GENERIC_KEYBOARD
         .dwFlags = 0,
         .hwndTarget = hwnd
     };
 
-    input.devices[1] = {
+    devices[1] = {
         .usUsagePage = 0x01, // HID_USAGE_PAGE_GENERIC
         .usUsage = 0x02,     // HID_USAGE_GENERIC_MOUSE
         .dwFlags = 0,
         .hwndTarget = hwnd
     };
 
-    if(RegisterRawInputDevices(input.devices.data(), input.devices.size(), sizeof(RAWINPUTDEVICE)) == FALSE) {
+    if(RegisterRawInputDevices(devices.data(), devices.size(), sizeof(RAWINPUTDEVICE)) == FALSE) {
         spdlog::error("RegisterRawInputDevices failed!"); 
     }
 }
 
-void handle_inputs(Input& input, LPARAM lparam, HWND hwnd, Context& context) {
+void Input::handle_inputs(LPARAM lparam, HWND hwnd, Renderer& renderer) {
     UINT dw_size;
     GetRawInputData((HRAWINPUT)lparam, RID_INPUT, NULL, &dw_size, sizeof(RAWINPUTHEADER));
     LPBYTE lpb = new BYTE[dw_size];
@@ -59,49 +53,29 @@ void handle_inputs(Input& input, LPARAM lparam, HWND hwnd, Context& context) {
 
     if(raw->header.dwType == RIM_TYPEKEYBOARD) {
         ScanCode scancode = static_cast<ScanCode>(raw->data.keyboard.MakeCode);
-        KeyCode keycode = get_keycode(scancode);
-        KeyState state = KeyState::Undefined;
+        std::optional<KeyCode> keycode = get_keycode(scancode);
+        KeyState state;
 
-        if((raw->data.keyboard.Flags & RI_KEY_MAKE) == 0) {
+        if(raw->data.keyboard.Flags == RI_KEY_MAKE) {
             state = KeyState::Down;
         } 
-        else if((raw->data.keyboard.Flags & RI_KEY_BREAK) == 0) {
-           state = KeyState::Up; 
+        else if(raw->data.keyboard.Flags == RI_KEY_BREAK) {
+            state = KeyState::Up;
         }
 
-        if(keycode != KeyCode::Undefined && state != KeyState::Undefined) {
-            keypress(keycode, state, hwnd, *context.input);
+        if(keycode.has_value()) {
+            keypress(keycode.value(), state);
         }
     }
 
     delete[] lpb;
 }
 
-void keypress(KeyCode key, KeyState state, HWND hwnd, Input& input) {
-    switch(key) {
-        case KeyCode::Quit: {
-            DestroyWindow(hwnd);
-            break;
-        }
-        case KeyCode::Forward: {
-            input.is_forward_pressed = (state == KeyState::Up) ? false : true;
-            break; 
-        }
-        case KeyCode::Back: {
-            input.is_back_pressed = (state == KeyState::Up) ? false : true;
-            break; 
-        }
-        case KeyCode::Left: {
-            input.is_left_pressed = (state == KeyState::Up) ? false : true;
-            break; 
-        }
-        case KeyCode::Right: {
-            input.is_right_pressed = (state == KeyState::Up) ? false : true;
-            break; 
-        }
-        default: {
-            break;
-        }
-    }
+void Input::keypress(KeyCode key, KeyState state) {
+    key_states[key] = state;
 }
- 
+
+bool Input::is_key_down(KeyCode key) {
+    return key_states[key] == KeyState::Down;
+}
+

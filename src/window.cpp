@@ -9,9 +9,13 @@
 
 #include "context.hpp"
 #include "gl_loader.hpp"
+#include "input.hpp"
 #include "renderer.hpp"
 
 void run_message_loop(HWND hwnd, HDC hdc, Context& context) {
+    Input& input = *context.input;
+    Renderer& renderer = *context.renderer;
+
     MSG message;
     ZeroMemory(&message, sizeof(MSG));
     while (true) {
@@ -24,6 +28,12 @@ void run_message_loop(HWND hwnd, HDC hdc, Context& context) {
             DispatchMessage(&message);
         }
         else {
+            for(const auto& [key, value] : input.input_map) {
+                if(input.is_key_down(key)) {
+                    value();
+                }
+            }
+
             RECT client_rect;
             GetClientRect(hwnd, &client_rect);
 
@@ -36,22 +46,6 @@ void run_message_loop(HWND hwnd, HDC hdc, Context& context) {
 
             glBindVertexArray(context.renderer->vao);
 
-            glm::vec4 direction(0.0f);
-            float velocity = 0.01f;
-            if(context.input->is_forward_pressed) {
-                direction += glm::vec4(0.0f, 1.0f, 0.0f, 0.0f) * velocity;
-            }
-            if(context.input->is_back_pressed) {
-                direction += glm::vec4(0.0f, -1.0f, 0.0f, 0.0f) * velocity;
-            }
-            if(context.input->is_left_pressed) {
-                direction += glm::vec4(-1.0f, 0.0f, 0.0f, 0.0f) * velocity;
-            }
-            if(context.input->is_right_pressed) {
-                direction += glm::vec4(1.0f, 0.0f, 0.0f, 0.0f) * velocity;
-            }
-
-            update_positions(*context.renderer, 0, direction);
             draw(*context.renderer); 
 
             SwapBuffers(hdc);
@@ -65,17 +59,16 @@ LRESULT CALLBACK window_proc(HWND hwnd, UINT message, WPARAM wparam, LPARAM lpar
             LPCREATESTRUCT p_create_struct = reinterpret_cast<LPCREATESTRUCT>(lparam);
             SetWindowLongPtr(hwnd, GWLP_USERDATA, reinterpret_cast<LONG_PTR>(p_create_struct->lpCreateParams));
             Context* context = reinterpret_cast<Context*>(GetWindowLongPtr(hwnd, GWLP_USERDATA));
-            if(context->input && !context->input->initialized) {
-                setup_input_devices(*context->input, hwnd);
-                context->input->initialized = true;
+            if(context) {
+                context->input->setup_input_devices(hwnd);
             }
 
             return 0;
         }
         case WM_INPUT: {
             Context* context = reinterpret_cast<Context*>(GetWindowLongPtr(hwnd, GWLP_USERDATA));
-            if(context->input && context->input->initialized) {
-                handle_inputs(*context->input, lparam, hwnd, *context);
+            if(context) {
+                context->input->handle_inputs(lparam, hwnd, *context->renderer);
             }
             return 0;
         }

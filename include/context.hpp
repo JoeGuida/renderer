@@ -1,12 +1,14 @@
 #ifndef GL_RENDERER_CONTEXT_HPP
 #define GL_RENDERER_CONTEXT_HPP
 
+#include <memory>
+
 #include "input.hpp"
 #include "renderer.hpp"
 
 struct Context {
-    Input* input;
-    Renderer* renderer;
+    std::unique_ptr<Input> input;
+    std::unique_ptr<Renderer> renderer;
 };
 
 #endif

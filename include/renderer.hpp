@@ -7,6 +7,7 @@
 #include <glm/vec3.hpp>
 #include <glm/vec4.hpp>
 
+#include "camera.hpp"
 #include "constants.hpp"
 #include "platform.hpp"
 
@@ -27,6 +28,8 @@ struct Renderer {
     size_t count;
 
     uint32_t shader;
+
+    Camera camera;
 
     std::array<glm::vec3, VERTEX_COUNT> vertices = {
         glm::vec3(-1.0f,  1.0f,  1.0f), // Front
@@ -73,6 +76,5 @@ void init(Renderer& renderer);
 void draw(const Renderer& renderer);
 void setup(const Renderer& renderer);
 void update_positions(Renderer& renderer, uint32_t id, const glm::vec4& direction);
-void update_array_buffer(Renderer& renderer);
 
 #endif

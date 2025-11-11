@@ -1,4 +1,6 @@
 #include <filesystem>
+#include <functional>
+#include <memory>
 #include <print>
 
 #include "platform.hpp"
@@ -43,23 +45,55 @@ int WinMain(HINSTANCE instance, HINSTANCE unused, LPSTR command_line, int show_w
         return -1;
     }
 
-    Input input { .initialized = false }; 
-    Renderer renderer;
-    Context context { 
-        .input = &input,
-        .renderer = &renderer
+    Camera camera {
+        .position = glm::vec3(0.0f, 0.0f, 1.0f),
+        .direction = glm::vec3(0.0f, 0.0f, -1.0f),
+        .up = WORLD_UP,
+        .front = WORLD_FRONT,
+        .right = WORLD_RIGHT,
+        .fov_radians = glm::radians(90.0f),
+        .aspect = ASPECT_RATIO,
+        .near = 0.01f,
+        .far = 10.0f
     };
+
+    Window window;
+    Context context { 
+        .input = std::make_unique<Input>(),
+        .renderer = std::make_unique<Renderer>()
+    };
+    Input& input = *context.input;
+    Renderer& renderer = *context.renderer;
+    HWND& hwnd = window.hwnd;
+    uint32_t& shader = renderer.shader;
+
+    input.bind(KeyCode::Forward, [&camera, &shader]() {
+        move_camera(camera, camera.front);
+        set_shader_uniform(shader, "projection", projection_matrix(camera));
+    });
+    input.bind(KeyCode::Back, [&camera, &shader]() {
+        move_camera(camera, -camera.front);
+        set_shader_uniform(shader, "projection", projection_matrix(camera));
+    });
+    input.bind(KeyCode::Left, [&camera, &shader]() {
+        move_camera(camera, -camera.right);
+        set_shader_uniform(shader, "projection", projection_matrix(camera));
+    });
+    input.bind(KeyCode::Right, [&camera, &shader]() {
+        move_camera(camera, camera.right);
+        set_shader_uniform(shader, "projection", projection_matrix(camera));
+    });
+    input.bind(KeyCode::Quit, [&hwnd]() { DestroyWindow(hwnd); });
 
     auto initialized_window = initialize_window(instance, show_window, SCREEN_WIDTH, SCREEN_HEIGHT, L"class_name", L"Renderer", context);
     if(!initialized_window.has_value()) {
         spdlog::error("error initializing window :: {}", initialized_window.error());
     }
-    Window& window = initialized_window.value();
-
+    window = initialized_window.value();
     init(renderer);
 
     // cube
-    glm::vec3 pos(0.0f);
+    glm::vec3 pos(0.0f, 0.0f, -1.0f);
     glm::vec3 color(0.15f, 0.15f, 0.15f);
     float size = 0.2f;
 
@@ -74,31 +108,21 @@ int WinMain(HINSTANCE instance, HINSTANCE unused, LPSTR command_line, int show_w
     handle_error(vertex_shader);
     handle_error(fragment_shader);
 
-    auto shader = link_shaders(vertex_shader.value(), fragment_shader.value());
-    handle_error(shader);
-
-    Camera camera {
-        .position = glm::vec3(0.0f, 0.0f, -1.0f),
-        .direction = glm::vec3(0.0f, 0.0f, 1.0f),
-        .up = WORLD_UP,
-        .front = WORLD_FRONT,
-        .right = WORLD_RIGHT,
-        .fov_radians = glm::radians(90.0f),
-        .aspect = ASPECT_RATIO,
-        .near = 0.01f,
-        .far = 10.0f
-    };
+    auto shader_program = link_shaders(vertex_shader.value(), fragment_shader.value());
+    handle_error(shader_program);
 
     glm::mat4 model(1.0f);
-    glm::mat4 view = glm::ortho(-ASPECT_RATIO, ASPECT_RATIO, -1.0f, 1.0f, 0.01f, 10.0f);
+    glm::mat4 view = glm::perspective(camera.fov_radians, camera.aspect, camera.near, camera.far);
     glm::mat4 projection = projection_matrix(camera); 
 
-    glUseProgram(shader.value());
-    set_shader_uniform(shader.value(), "model", model);
-    set_shader_uniform(shader.value(), "view", view);
-    set_shader_uniform(shader.value(), "projection", projection);
-    renderer.shader = shader.value();
+    glUseProgram(shader_program.value());
+    set_shader_uniform(shader_program.value(), "model", model);
+    set_shader_uniform(shader_program.value(), "view", view);
+    set_shader_uniform(shader_program.value(), "projection", projection);
+    renderer.shader = shader_program.value();
 
+    spdlog::info("Count: {}", renderer.count);
+    spdlog::info("Count: {}", context.renderer->count);
     setup(renderer);
     run_message_loop(window.hwnd, window.hdc, context);
 
