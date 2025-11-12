@@ -22,6 +22,9 @@ void init(Renderer& renderer) {
 }
 
 void draw(const Renderer& renderer) {
+    glViewport(0, 0, renderer.viewport.x, renderer.viewport.y);
+    glClearColor(0.2f, 0.2f, 0.2f, 1.0f);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     glUseProgram(renderer.shader);
     glDrawElementsInstanced(GL_TRIANGLES, renderer.indices.size(), GL_UNSIGNED_INT, 0, renderer.count); 
 }
@@ -42,6 +45,8 @@ void setup(const Renderer& renderer) {
 
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(glm::vec3), (void*)0);
     glEnableVertexAttribArray(0);
+
+    glBindVertexArray(renderer.vao);
 }
 
 void update_positions(Renderer& renderer, uint32_t id, const glm::vec4& direction) {
