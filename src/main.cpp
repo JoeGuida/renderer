@@ -1,3 +1,4 @@
+#include <array>
 #include <filesystem>
 #include <functional>
 #include <memory>
@@ -58,7 +59,7 @@ int WinMain(HINSTANCE instance, HINSTANCE unused, LPSTR command_line, int show_w
     };
 
     Window window;
-    Context context { 
+    Context context {
         .input = std::make_unique<IInput>(),
         .renderer = std::make_unique<Renderer>()
     };
@@ -67,23 +68,42 @@ int WinMain(HINSTANCE instance, HINSTANCE unused, LPSTR command_line, int show_w
     HWND& hwnd = window.hwnd;
     uint32_t& shader = renderer.shader;
 
-    input.bind(KeyCode::Forward, [&camera, &shader]() {
-        move_camera(camera, camera.front);
-        set_shader_uniform(shader, "projection", projection_matrix(camera));
-    });
-    input.bind(KeyCode::Back, [&camera, &shader]() {
-        move_camera(camera, -camera.front);
-        set_shader_uniform(shader, "projection", projection_matrix(camera));
-    });
-    input.bind(KeyCode::Left, [&camera, &shader]() {
-        move_camera(camera, -camera.right);
-        set_shader_uniform(shader, "projection", projection_matrix(camera));
-    });
-    input.bind(KeyCode::Right, [&camera, &shader]() {
-        move_camera(camera, camera.right);
-        set_shader_uniform(shader, "projection", projection_matrix(camera));
-    });
-    input.bind(KeyCode::Quit, [&hwnd]() { DestroyWindow(hwnd); });
+    std::array<InputBinding, 5> bindings {
+        InputBinding {
+            .action = InputAction::MoveForward,
+            .callback = [&camera &shader]() {
+                move_camera(camera, camera.front);
+                set_shader_uniform(shader, "projection", projection_matrix(camera));
+            }
+        },
+        InputBinding {
+            .action = InputAction::MoveBack,
+            .callback = [&camera &shader]() {
+                move_camera(camera, camera.front);
+                set_shader_uniform(shader, "projection", projection_matrix(camera));
+            }
+        },
+        InputBinding {
+            .action = InputAction::MoveLeft,
+            .callback = [&camera &shader]() {
+                move_camera(camera, camera.front);
+                set_shader_uniform(shader, "projection", projection_matrix(camera));
+            }
+        },
+        InputBinding {
+            .action = InputAction::MoveRight,
+            .callback = [&camera &shader]() {
+                move_camera(camera, camera.front);
+                set_shader_uniform(shader, "projection", projection_matrix(camera));
+            }
+        },
+        InputBinding {
+            .action = InputAction::Quit,
+            .callback = [&hwnd]() {
+                DestroyWindow(hwnd);
+            }
+        },
+    };
 
     auto initialized_window = initialize_window(instance, show_window, SCREEN_WIDTH, SCREEN_HEIGHT, L"class_name", L"Renderer", context);
     if(!initialized_window.has_value()) {

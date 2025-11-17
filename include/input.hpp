@@ -9,6 +9,7 @@
 
 #include <cstdint>
 #include <functional>
+#include <queue>
 #include <unordered_map>
 
 enum class InputAction : uint32_t {
@@ -26,15 +27,23 @@ enum class InputState : uint32_t {
     Released
 };
 
+struct InputBinding {
+    InputAction action;
+    std::function<void()> callback;
+};
+
 inline std::unordered_map<InputAction, InputState> states;
 inline std::unordered_map<InputAction, InputState> last_states;
-inline std::unordered_map<InputAction, std::function<void()>> callbacks;
 
 struct Input {
     bool is_key_down(const KeyCode& key);
     bool is_key_up(const KeyCode& key);
     bool is_key_pressed(const KeyCode& key);
     bool is_key_released(const KeyCode& key);
+
+    void bind(const InputBinding& binding);
+
+    std::queue<InputBinding> bindings;
 };
 
 #endif
