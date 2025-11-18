@@ -74,34 +74,39 @@ int WinMain(HINSTANCE instance, HINSTANCE unused, LPSTR command_line, int show_w
             .callback = [&camera &shader]() {
                 move_camera(camera, camera.front);
                 set_shader_uniform(shader, "projection", projection_matrix(camera));
-            }
+            },
+            .repeat = true
         },
         InputBinding {
             .action = InputAction::MoveBack,
             .callback = [&camera &shader]() {
                 move_camera(camera, camera.front);
                 set_shader_uniform(shader, "projection", projection_matrix(camera));
-            }
+            },
+            .repeat = true
         },
         InputBinding {
             .action = InputAction::MoveLeft,
             .callback = [&camera &shader]() {
                 move_camera(camera, camera.front);
                 set_shader_uniform(shader, "projection", projection_matrix(camera));
-            }
+            },
+            .repeat = true
         },
         InputBinding {
             .action = InputAction::MoveRight,
             .callback = [&camera &shader]() {
                 move_camera(camera, camera.front);
                 set_shader_uniform(shader, "projection", projection_matrix(camera));
-            }
+            },
+            .repeat = true
         },
         InputBinding {
             .action = InputAction::Quit,
             .callback = [&hwnd]() {
                 DestroyWindow(hwnd);
-            }
+            },
+            .repeat = false
         },
     };
 
