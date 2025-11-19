@@ -7,15 +7,11 @@
 
 #include <spdlog/spdlog.h>
 
-#include "context.hpp"
 #include "gl_loader.hpp"
 #include "input.hpp"
 #include "renderer.hpp"
 
-void run_message_loop(HWND hwnd, HDC hdc, Context& context) {
-    Input& input = *context.input;
-    Renderer& renderer = *context.renderer;
-
+void run_message_loop(HWND hwnd, HDC hdc, Renderer* renderer) {
     MSG message;
     ZeroMemory(&message, sizeof(MSG));
     while (true) {
@@ -28,12 +24,6 @@ void run_message_loop(HWND hwnd, HDC hdc, Context& context) {
             DispatchMessage(&message);
         }
         else {
-            for(const auto& [key, value] : input.input_map) {
-                if(input.is_key_down(key)) {
-                    value();
-                }
-            }
-
             RECT client_rect;
             GetClientRect(hwnd, &client_rect);
 
@@ -44,9 +34,9 @@ void run_message_loop(HWND hwnd, HDC hdc, Context& context) {
             glClearColor(0.2f, 0.2f, 0.2f, 1.0f);
             glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-            glBindVertexArray(context.renderer->vao);
+            glBindVertexArray(renderer->vao);
 
-            draw(*context.renderer); 
+            draw(*renderer); 
 
             SwapBuffers(hdc);
         }
@@ -56,20 +46,9 @@ void run_message_loop(HWND hwnd, HDC hdc, Context& context) {
 LRESULT CALLBACK window_proc(HWND hwnd, UINT message, WPARAM wparam, LPARAM lparam) {
     switch (message) {
         case WM_CREATE: {
-            LPCREATESTRUCT p_create_struct = reinterpret_cast<LPCREATESTRUCT>(lparam);
-            SetWindowLongPtr(hwnd, GWLP_USERDATA, reinterpret_cast<LONG_PTR>(p_create_struct->lpCreateParams));
-            Context* context = reinterpret_cast<Context*>(GetWindowLongPtr(hwnd, GWLP_USERDATA));
-            if(context) {
-                context->input->setup_input_devices(hwnd);
-            }
-
             return 0;
         }
         case WM_INPUT: {
-            Context* context = reinterpret_cast<Context*>(GetWindowLongPtr(hwnd, GWLP_USERDATA));
-            if(context) {
-                context->input->handle_inputs(lparam, hwnd, *context->renderer);
-            }
             return 0;
         }
         case WM_DESTROY: {
@@ -83,7 +62,7 @@ LRESULT CALLBACK window_proc(HWND hwnd, UINT message, WPARAM wparam, LPARAM lpar
 
 std::expected<Window, std::string> initialize_window(HINSTANCE instance, int show_window_flags, 
                                                      int width, int height, 
-                                                     const wchar_t* class_name, const wchar_t* window_title, Context& context) 
+                                                     const wchar_t* class_name, const wchar_t* window_title, Renderer* renderer) 
 {
     WNDCLASSEX window_class {
         .cbSize = sizeof(WNDCLASSEX),
@@ -107,7 +86,7 @@ std::expected<Window, std::string> initialize_window(HINSTANCE instance, int sho
 
     HWND hwnd = CreateWindowEx(NULL, class_name, window_title, WS_OVERLAPPEDWINDOW, 
                                  CW_USEDEFAULT, CW_USEDEFAULT, width, height, 
-                                 NULL, NULL, instance, &context);
+                                 NULL, NULL, instance, renderer);
 
     if (!hwnd) {
         return std::unexpected("error creating window");

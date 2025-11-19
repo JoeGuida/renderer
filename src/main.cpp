@@ -12,7 +12,6 @@
 #include <spdlog/spdlog.h>
 
 #include "camera.hpp"
-#include "context.hpp"
 #include "convert.hpp"
 #include "gl_loader.hpp"
 #include "input.hpp"
@@ -58,49 +57,26 @@ int WinMain(HINSTANCE instance, HINSTANCE unused, LPSTR command_line, int show_w
     };
 
     Window window;
-    Context context { 
-        .input = std::make_unique<Input>(),
-        .renderer = std::make_unique<Renderer>()
-    };
-    Input& input = *context.input;
-    Renderer& renderer = *context.renderer;
+    std::unique_ptr<Renderer> renderer = std::make_unique<Renderer>();
     HWND& hwnd = window.hwnd;
-    uint32_t& shader = renderer.shader;
+    uint32_t& shader = renderer->shader;
 
-    input.bind(KeyCode::Forward, [&camera, &shader]() {
-        move_camera(camera, camera.front);
-        set_shader_uniform(shader, "projection", projection_matrix(camera));
-    });
-    input.bind(KeyCode::Back, [&camera, &shader]() {
-        move_camera(camera, -camera.front);
-        set_shader_uniform(shader, "projection", projection_matrix(camera));
-    });
-    input.bind(KeyCode::Left, [&camera, &shader]() {
-        move_camera(camera, -camera.right);
-        set_shader_uniform(shader, "projection", projection_matrix(camera));
-    });
-    input.bind(KeyCode::Right, [&camera, &shader]() {
-        move_camera(camera, camera.right);
-        set_shader_uniform(shader, "projection", projection_matrix(camera));
-    });
-    input.bind(KeyCode::Quit, [&hwnd]() { DestroyWindow(hwnd); });
-
-    auto initialized_window = initialize_window(instance, show_window, SCREEN_WIDTH, SCREEN_HEIGHT, L"class_name", L"Renderer", context);
+    auto initialized_window = initialize_window(instance, show_window, SCREEN_WIDTH, SCREEN_HEIGHT, L"class_name", L"Renderer", renderer.get());
     if(!initialized_window.has_value()) {
         spdlog::error("error initializing window :: {}", initialized_window.error());
     }
     window = initialized_window.value();
-    init(renderer);
+    init(*renderer);
 
     // cube
     glm::vec3 pos(0.0f, 0.0f, -1.0f);
     glm::vec3 color(0.15f, 0.15f, 0.15f);
     float size = 0.2f;
 
-    renderer.positions[renderer.count] = to_vec4(pos);
-    renderer.colors[renderer.count] = to_vec4(color);
-    renderer.sizes[renderer.count] = to_vec4(size);
-    renderer.count++;
+    renderer->positions[renderer->count] = to_vec4(pos);
+    renderer->colors[renderer->count] = to_vec4(color);
+    renderer->sizes[renderer->count] = to_vec4(size);
+    renderer->count++;
 
     auto vertex_shader = compile_shader(std::filesystem::current_path() / "shaders", "rect", GL_VERTEX_SHADER);
     auto fragment_shader = compile_shader(std::filesystem::current_path() / "shaders", "rect", GL_FRAGMENT_SHADER);
@@ -119,12 +95,10 @@ int WinMain(HINSTANCE instance, HINSTANCE unused, LPSTR command_line, int show_w
     set_shader_uniform(shader_program.value(), "model", model);
     set_shader_uniform(shader_program.value(), "view", view);
     set_shader_uniform(shader_program.value(), "projection", projection);
-    renderer.shader = shader_program.value();
+    renderer->shader = shader_program.value();
 
-    spdlog::info("Count: {}", renderer.count);
-    spdlog::info("Count: {}", context.renderer->count);
-    setup(renderer);
-    run_message_loop(window.hwnd, window.hdc, context);
+    setup(*renderer);
+    run_message_loop(window.hwnd, window.hdc, renderer.get());
 
     return 0;
 }
