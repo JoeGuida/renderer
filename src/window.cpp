@@ -11,7 +11,7 @@
 #include "input.hpp"
 #include "renderer.hpp"
 
-void run_message_loop(HWND hwnd, HDC hdc, Renderer* renderer) {
+void run_message_loop(PlatformWindow* window, Renderer* renderer) {
     MSG message;
     ZeroMemory(&message, sizeof(MSG));
     while (true) {
@@ -25,7 +25,7 @@ void run_message_loop(HWND hwnd, HDC hdc, Renderer* renderer) {
         }
         else {
             RECT client_rect;
-            GetClientRect(hwnd, &client_rect);
+            GetClientRect(window->hwnd, &client_rect);
 
             int client_width = client_rect.right - client_rect.left;
             int client_height = client_rect.bottom - client_rect.top;
@@ -38,7 +38,7 @@ void run_message_loop(HWND hwnd, HDC hdc, Renderer* renderer) {
 
             draw(*renderer); 
 
-            SwapBuffers(hdc);
+            SwapBuffers(window->hdc);
         }
     }
 }
@@ -62,7 +62,7 @@ LRESULT CALLBACK window_proc(HWND hwnd, UINT message, WPARAM wparam, LPARAM lpar
 
 std::expected<Window, std::string> initialize_window(HINSTANCE instance, int show_window_flags, 
                                                      int width, int height, 
-                                                     const wchar_t* class_name, const wchar_t* window_title, Renderer* renderer) 
+                                                     const wchar_t* class_name, const wchar_t* window_title) 
 {
     WNDCLASSEX window_class {
         .cbSize = sizeof(WNDCLASSEX),
@@ -86,7 +86,7 @@ std::expected<Window, std::string> initialize_window(HINSTANCE instance, int sho
 
     HWND hwnd = CreateWindowEx(NULL, class_name, window_title, WS_OVERLAPPEDWINDOW, 
                                  CW_USEDEFAULT, CW_USEDEFAULT, width, height, 
-                                 NULL, NULL, instance, renderer);
+                                 NULL, NULL, instance, nullptr);
 
     if (!hwnd) {
         return std::unexpected("error creating window");
@@ -128,11 +128,15 @@ std::expected<Window, std::string> initialize_window(HINSTANCE instance, int sho
     ShowWindow(hwnd, show_window_flags);
     UpdateWindow(hwnd);
 
-    return Window {
-        .hwnd = hwnd,
-        .hdc = hdc,
-        .hglrc = hglrc,
-        .width = width,
-        .height = height
-    };
+    std::unique_ptr<PlatformWindow> platform_window = std::make_unique<PlatformWindow>();
+    platform_window->hwnd = hwnd;
+    platform_window->hdc = hdc;
+    platform_window->hglrc = hglrc;
+
+    Window window;
+    window.platform_window = std::move(platform_window);
+    window.width = width;
+    window.height = height;
+
+    return window;
 }

@@ -56,16 +56,13 @@ int WinMain(HINSTANCE instance, HINSTANCE unused, LPSTR command_line, int show_w
         .far = 10.0f
     };
 
-    Window window;
     std::unique_ptr<Renderer> renderer = std::make_unique<Renderer>();
-    HWND& hwnd = window.hwnd;
-    uint32_t& shader = renderer->shader;
 
-    auto initialized_window = initialize_window(instance, show_window, SCREEN_WIDTH, SCREEN_HEIGHT, L"class_name", L"Renderer", renderer.get());
+    auto initialized_window = initialize_window(instance, show_window, SCREEN_WIDTH, SCREEN_HEIGHT, L"class_name", L"Renderer");
     if(!initialized_window.has_value()) {
         spdlog::error("error initializing window :: {}", initialized_window.error());
     }
-    window = initialized_window.value();
+    Window window = std::move(initialized_window.value());
     init(*renderer);
 
     // cube
@@ -98,7 +95,7 @@ int WinMain(HINSTANCE instance, HINSTANCE unused, LPSTR command_line, int show_w
     renderer->shader = shader_program.value();
 
     setup(*renderer);
-    run_message_loop(window.hwnd, window.hdc, renderer.get());
+    run_message_loop(window.platform_window.get(), renderer.get());
 
     return 0;
 }

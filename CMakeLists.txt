@@ -13,7 +13,7 @@ target_compile_options(gl_renderer PRIVATE "/utf-8")
 
 target_include_directories(gl_renderer PRIVATE include deps deps/opengl)
 
-target_link_libraries(gl_renderer PRIVATE gdi32.lib user32.lib opengl32.lib ${CMAKE_SOURCE_DIR}/deps/spdlogd.lib)
+target_link_libraries(gl_renderer PRIVATE gdi32.lib user32.lib opengl32.lib ${CMAKE_SOURCE_DIR}/deps/spdlog.lib)
 
 set_target_properties(gl_renderer PROPERTIES WIN32_EXECUTABLE True)
 

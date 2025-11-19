@@ -5,23 +5,27 @@
 #include <memory>
 #include <string>
 
-#include "platform.hpp"
-
 #include "renderer.hpp"
 
+#if defined(_WIN64) || defined(_WIN32)
+    #include <platform/win32_window.hpp>
+#elif defined(__linux__)
+    #include <platform/linux_window.hpp>
+#endif
+
+struct PlatformWindow;
+
 struct Window {
-    HWND hwnd;
-    HDC hdc;
-    HGLRC hglrc;
+    std::unique_ptr<PlatformWindow> platform_window;
     int width;
     int height;
 };
 
-void run_message_loop(HWND hwnd, HDC hdc, Renderer* renderer);
+void run_message_loop(PlatformWindow* window, Renderer* renderer);
 LRESULT CALLBACK window_proc(HWND hwnd, UINT message, WPARAM wparam, LPARAM lparam);
 std::expected<Window, std::string> initialize_window(HINSTANCE instance, int show_window_flags, 
                                                     int width, int height, 
-                                                    const wchar_t* class_name, const wchar_t* window_title, Renderer* renderer);
+                                                    const wchar_t* class_name, const wchar_t* window_title);
 
 #endif
 
