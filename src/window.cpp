@@ -51,7 +51,7 @@ LRESULT CALLBACK window_proc(HWND hwnd, UINT message, WPARAM wparam, LPARAM lpar
         case WM_INPUT: {
             Context* context = reinterpret_cast<Context*>(GetWindowLongPtr(hwnd, GWLP_USERDATA));
             if(context) {
-                context->input->get_inputs(lparam, hwnd);
+                context->input->handle_inputs(lparam, hwnd, *context->renderer);
             }
             return 0;
         }

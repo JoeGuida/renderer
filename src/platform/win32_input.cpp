@@ -36,7 +36,7 @@ void IInput::setup_input_devices(HWND hwnd) {
     }
 }
 
-ScanCode IInput::get_inputs(LPARAM lparam, HWND hwnd, Renderer& renderer) {
+void IInput::handle_inputs(LPARAM lparam, HWND hwnd, Renderer& renderer) {
     UINT dw_size;
     if(GetRawInputData((HRAWINPUT)lparam, RID_INPUT, NULL, &dw_size, sizeof(RAWINPUTHEADER)) == -1) {
         spdlog::error("GetRawInputData failed");
@@ -63,14 +63,18 @@ ScanCode IInput::get_inputs(LPARAM lparam, HWND hwnd, Renderer& renderer) {
 
         if(raw->data.keyboard.Flags == RI_KEY_MAKE) {
             state = KeyState::Down;
-        }
+        } 
         else if(raw->data.keyboard.Flags == RI_KEY_BREAK) {
             state = KeyState::Up;
         }
 
         if(keycode.has_value()) {
-            return scancode;
+            keypress(keycode.value(), state);
         }
     }
+}
+
+void IInput::keypress(KeyCode key, KeyState state) {
+    key_states[key] = state;
 }
 
