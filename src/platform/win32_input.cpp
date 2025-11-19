@@ -4,7 +4,19 @@
 
 #include <spdlog/spdlog.h>
 
-void Win32Input::setup_input_devices(HWND hwnd) {
+void IInput::bind(KeyCode key, const std::function<void()>& function) {
+    input_map[key] = function;
+}
+
+std::optional<KeyCode> IInput::get_keycode(ScanCode scancode) {
+    if(key_bindings.contains(scancode)) {
+        return key_bindings[scancode];
+    }
+
+    return std::nullopt;
+}
+
+void IInput::setup_input_devices(HWND hwnd) {
     devices[0] = {
         .usUsagePage = 0x01, // HID_USAGE_PAGE_GENERIC
         .usUsage = 0x06,     // HID_USAGE_GENERIC_KEYBOARD
@@ -24,7 +36,7 @@ void Win32Input::setup_input_devices(HWND hwnd) {
     }
 }
 
-ScanCode Win32Input::get_inputs(LPARAM lparam, HWND hwnd, Renderer& renderer) {
+ScanCode IInput::get_inputs(LPARAM lparam, HWND hwnd, Renderer& renderer) {
     UINT dw_size;
     if(GetRawInputData((HRAWINPUT)lparam, RID_INPUT, NULL, &dw_size, sizeof(RAWINPUTHEADER)) == -1) {
         spdlog::error("GetRawInputData failed");
@@ -45,16 +57,8 @@ ScanCode Win32Input::get_inputs(LPARAM lparam, HWND hwnd, Renderer& renderer) {
     }
 
     if(raw->header.dwType == RIM_TYPEKEYBOARD) {
-        return get_keyboard_input(raw);
-    }
-
-    if(raw->header.dwType == RIM_TYPEMOUSE) {
-        //return get_mouse_input(raw);
-    }
-}
-
-ScanCode Win32Input::get_keyboard_input(RAWINPUT* raw) {
         ScanCode scancode = static_cast<ScanCode>(raw->data.keyboard.MakeCode);
+        std::optional<KeyCode> keycode = get_keycode(scancode);
         KeyState state;
 
         if(raw->data.keyboard.Flags == RI_KEY_MAKE) {
@@ -67,5 +71,6 @@ ScanCode Win32Input::get_keyboard_input(RAWINPUT* raw) {
         if(keycode.has_value()) {
             return scancode;
         }
+    }
 }
 
