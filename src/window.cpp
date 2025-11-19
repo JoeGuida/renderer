@@ -7,7 +7,6 @@
 
 #include <spdlog/spdlog.h>
 
-#include "clock.hpp"
 #include "context.hpp"
 #include "gl_loader.hpp"
 #include "input.hpp"
@@ -35,8 +34,20 @@ void run_message_loop(HWND hwnd, HDC hdc, Context& context) {
                 }
             }
 
-            update_time(context.renderer->clock); 
+            RECT client_rect;
+            GetClientRect(hwnd, &client_rect);
+
+            int client_width = client_rect.right - client_rect.left;
+            int client_height = client_rect.bottom - client_rect.top;
+
+            glViewport(0, 0, client_width, client_height);
+            glClearColor(0.2f, 0.2f, 0.2f, 1.0f);
+            glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+            glBindVertexArray(context.renderer->vao);
+
             draw(*context.renderer); 
+
             SwapBuffers(hdc);
         }
     }

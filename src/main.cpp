@@ -21,8 +21,8 @@
 #include "shader.hpp"
 #include "window.hpp"
 
-constexpr int SCREEN_WIDTH = 1280;
-constexpr int SCREEN_HEIGHT = 720;
+constexpr int SCREEN_WIDTH = 1920;
+constexpr int SCREEN_HEIGHT = 1080;
 constexpr float ASPECT_RATIO = SCREEN_WIDTH / static_cast<float>(SCREEN_HEIGHT);
 
 constexpr glm::vec3 WORLD_UP(0.0f, 1.0f, 0.0f);
@@ -92,13 +92,6 @@ int WinMain(HINSTANCE instance, HINSTANCE unused, LPSTR command_line, int show_w
     window = initialized_window.value();
     init(renderer);
 
-    RECT client_rect;
-    GetClientRect(hwnd, &client_rect);
-
-    int client_width = client_rect.right - client_rect.left;
-    int client_height = client_rect.bottom - client_rect.top;
-    renderer.viewport = glm::vec2(client_width, client_height);
-
     // cube
     glm::vec3 pos(0.0f, 0.0f, -1.0f);
     glm::vec3 color(0.15f, 0.15f, 0.15f);
@@ -128,6 +121,8 @@ int WinMain(HINSTANCE instance, HINSTANCE unused, LPSTR command_line, int show_w
     set_shader_uniform(shader_program.value(), "projection", projection);
     renderer.shader = shader_program.value();
 
+    spdlog::info("Count: {}", renderer.count);
+    spdlog::info("Count: {}", context.renderer->count);
     setup(renderer);
     run_message_loop(window.hwnd, window.hdc, context);
 

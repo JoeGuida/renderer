@@ -4,12 +4,10 @@
 #include <array>
 #include <cstdint>
 
-#include <glm/vec2.hpp>
 #include <glm/vec3.hpp>
 #include <glm/vec4.hpp>
 
 #include "camera.hpp"
-#include "clock.hpp"
 #include "constants.hpp"
 #include "platform.hpp"
 
@@ -32,9 +30,6 @@ struct Renderer {
     uint32_t shader;
 
     Camera camera;
-    Clock clock;
-
-    glm::vec2 viewport;
 
     std::array<glm::vec3, VERTEX_COUNT> vertices = {
         glm::vec3(-1.0f,  1.0f,  1.0f), // Front
