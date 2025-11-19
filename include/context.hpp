@@ -7,7 +7,7 @@
 #include "renderer.hpp"
 
 struct Context {
-    std::unique_ptr<IInput> input;
+    std::unique_ptr<Input> input;
     std::unique_ptr<Renderer> renderer;
 };
 

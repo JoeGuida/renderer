@@ -14,7 +14,7 @@
 #include "renderer.hpp"
 
 void run_message_loop(HWND hwnd, HDC hdc, Context& context) {
-    IInput& input = *context.input;
+    Input& input = *context.input;
     Renderer& renderer = *context.renderer;
 
     MSG message;
@@ -29,6 +29,12 @@ void run_message_loop(HWND hwnd, HDC hdc, Context& context) {
             DispatchMessage(&message);
         }
         else {
+            for(const auto& [key, value] : input.input_map) {
+                if(input.is_key_down(key)) {
+                    value();
+                }
+            }
+
             update_time(context.renderer->clock); 
             draw(*context.renderer); 
             SwapBuffers(hdc);

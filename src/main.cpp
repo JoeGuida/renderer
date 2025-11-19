@@ -59,10 +59,10 @@ int WinMain(HINSTANCE instance, HINSTANCE unused, LPSTR command_line, int show_w
 
     Window window;
     Context context { 
-        .input = std::make_unique<IInput>(),
+        .input = std::make_unique<Input>(),
         .renderer = std::make_unique<Renderer>()
     };
-    IInput& input = *context.input;
+    Input& input = *context.input;
     Renderer& renderer = *context.renderer;
     HWND& hwnd = window.hwnd;
     uint32_t& shader = renderer.shader;
