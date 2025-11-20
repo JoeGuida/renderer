@@ -62,6 +62,10 @@ void handle_error(const std::expected<uint32_t, std::string>& expect) {
 
     std::unique_ptr<Renderer> renderer = std::make_unique<Renderer>();
 
+    Input input {
+        .platform_input = std::make_unique<PlatformInput>()
+    };
+
 #if defined(_WIN64) || defined(_WIN32)
     auto initialized_window = initialize_window(instance, show_window, SCREEN_WIDTH, SCREEN_HEIGHT, L"class_name", L"Renderer");
 #elif defined(__linux__)
@@ -72,9 +76,18 @@ void handle_error(const std::expected<uint32_t, std::string>& expect) {
     }
     Window window {
         .platform_window = std::move(initialized_window.value()),
+        .input = std::make_unique<Input>(std::move(input)),
         .width = SCREEN_WIDTH,
         .height = SCREEN_HEIGHT
     };
+
+    InputBinding binding {
+        .state = InputState::Pressed,
+        .callback = [&window]() { window.platform_window->close(); }
+    };
+
+    window.input->bind(InputAction::Quit, binding);
+
     init(*renderer);
 
     // cube

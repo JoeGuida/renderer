@@ -119,3 +119,8 @@ std::expected<std::unique_ptr<PlatformWindow>, std::string> initialize_window(HI
 
     return platform_window;
 }
+
+void PlatformWindow::close() {
+    DestroyWindow(hwnd);
+}
+
