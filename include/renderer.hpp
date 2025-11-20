@@ -73,8 +73,9 @@ struct Renderer {
 };
 
 void init(Renderer& renderer);
-void draw(const Renderer& renderer);
+void draw(const Renderer& renderer, int width, int height);
 void setup(const Renderer& renderer);
 void update_positions(Renderer& renderer, uint32_t id, const glm::vec4& direction);
+void bind_vao(uint32_t vao);
 
 #endif

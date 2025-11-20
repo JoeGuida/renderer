@@ -11,55 +11,6 @@
 #include "input.hpp"
 #include "renderer.hpp"
 
-void run_message_loop(PlatformWindow* window, Renderer* renderer) {
-    MSG message;
-    ZeroMemory(&message, sizeof(MSG));
-    while (true) {
-        if (PeekMessage(&message, NULL, 0, 0, PM_REMOVE)) {
-            if (message.message == WM_QUIT) {
-                break;
-            }
-
-            TranslateMessage(&message);
-            DispatchMessage(&message);
-        }
-        else {
-            RECT client_rect;
-            GetClientRect(window->hwnd, &client_rect);
-
-            int client_width = client_rect.right - client_rect.left;
-            int client_height = client_rect.bottom - client_rect.top;
-
-            glViewport(0, 0, client_width, client_height);
-            glClearColor(0.2f, 0.2f, 0.2f, 1.0f);
-            glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-            glBindVertexArray(renderer->vao);
-
-            draw(*renderer); 
-
-            SwapBuffers(window->hdc);
-        }
-    }
-}
-
-LRESULT CALLBACK window_proc(HWND hwnd, UINT message, WPARAM wparam, LPARAM lparam) {
-    switch (message) {
-        case WM_CREATE: {
-            return 0;
-        }
-        case WM_INPUT: {
-            return 0;
-        }
-        case WM_DESTROY: {
-            PostQuitMessage(0);
-            return 0;
-        }
-    }
-
-    return DefWindowProc(hwnd, message, wparam, lparam);
-}
-
 std::expected<Window, std::string> initialize_window(HINSTANCE instance, int show_window_flags, 
                                                      int width, int height, 
                                                      const wchar_t* class_name, const wchar_t* window_title) 

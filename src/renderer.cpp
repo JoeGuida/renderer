@@ -21,7 +21,10 @@ void init(Renderer& renderer) {
     renderer.count = 0;
 }
 
-void draw(const Renderer& renderer) {
+void draw(const Renderer& renderer, int width, int height) {
+    glViewport(0, 0, width, height);
+    glClearColor(0.2f, 0.2f, 0.2f, 1.0f);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     glUseProgram(renderer.shader);
     glDrawElementsInstanced(GL_TRIANGLES, renderer.indices.size(), GL_UNSIGNED_INT, 0, renderer.count); 
 }
@@ -52,5 +55,9 @@ void update_positions(Renderer& renderer, uint32_t id, const glm::vec4& directio
     glBindBuffer(GL_UNIFORM_BUFFER, renderer.ubo);
     glBufferSubData(GL_UNIFORM_BUFFER, 0, POSITIONS_SIZE, renderer.positions.data());
 
+}
+
+void bind_vao(uint32_t vao) {
+    glBindVertexArray(vao);
 }
 
