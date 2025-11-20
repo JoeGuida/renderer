@@ -1,5 +1,7 @@
 #include <platform/win32_window.hpp>
 
+#include "gl_loader.hpp"
+
 void run_message_loop(PlatformWindow* window, Renderer* renderer) {
     MSG message;
     ZeroMemory(&message, sizeof(MSG));

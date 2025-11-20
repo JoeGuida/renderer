@@ -1,7 +1,9 @@
 #ifndef GL_RENDERER_WIN32_WINDOW_HPP
 #define GL_RENDERER_WIN32_WINDOW_HPP
 
+#include <expected>
 #include <memory>
+#include <string>
 
 #include "platform.hpp"
 #include  "renderer.hpp"
