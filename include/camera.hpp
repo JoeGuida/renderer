@@ -1,5 +1,5 @@
-#ifndef GL_RENDERER_CAMERA_HPP
-#define GL_RENDERER_CAMERA_HPP
+#ifndef RENDERER_CAMERA_HPP
+#define RENDERER_CAMERA_HPP
 
 #include <glm/mat4x4.hpp>
 #include <glm/vec3.hpp>

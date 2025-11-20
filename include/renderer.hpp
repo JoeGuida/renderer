@@ -1,5 +1,5 @@
-#ifndef GL_RENDERER_RENDERER_HPP
-#define GL_RENDERER_RENDERER_HPP
+#ifndef RENDERER_RENDERER_HPP
+#define RENDERER_RENDERER_HPP
 
 #include <array>
 #include <cstdint>

@@ -1,5 +1,5 @@
-#ifndef GL_RENDERER_INPUT_HPP
-#define GL_RENDERER_INPUT_HPP
+#ifndef RENDERER_INPUT_HPP
+#define RENDERER_INPUT_HPP
 
 #include <array>
 #include <functional>

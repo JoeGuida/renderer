@@ -1,5 +1,5 @@
-#ifndef GL_RENDERER_CONVERT_HPP
-#define GL_RENDERER_CONVERT_HPP
+#ifndef RENDERER_CONVERT_HPP
+#define RENDERER_CONVERT_HPP
 
 #include <glm/vec3.hpp>
 #include <glm/vec4.hpp>

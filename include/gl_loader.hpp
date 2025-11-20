@@ -1,5 +1,5 @@
-#ifndef GL_RENDERER_GL_LOADER_HPP
-#define GL_RENDERER_GL_LOADER_HPP
+#ifndef RENDERER_GL_LOADER_HPP
+#define RENDERER_GL_LOADER_HPP
 
 #include "platform.hpp"
 

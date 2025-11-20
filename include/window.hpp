@@ -1,5 +1,5 @@
-#ifndef GL_RENDERER_WINDOW_HPP
-#define GL_RENDERER_WINDOW_HPP
+#ifndef RENDERER_WINDOW_HPP
+#define RENDERER_WINDOW_HPP
 
 #include <memory>
 

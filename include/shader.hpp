@@ -1,5 +1,5 @@
-#ifndef GL_RENDERER_SHADER_HPP
-#define GL_RENDERER_SHADER_HPP
+#ifndef RENDERER_SHADER_HPP
+#define RENDERER_SHADER_HPP
 
 #include <cstdint>
 #include <expected>

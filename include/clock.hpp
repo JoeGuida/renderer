@@ -1,5 +1,5 @@
-#ifndef GL_RENDERER_CLOCK_HPP
-#define GL_RENDERER_CLOCK_HPP
+#ifndef RENDERER_CLOCK_HPP
+#define RENDERER_CLOCK_HPP
 
 #include <chrono>
 
