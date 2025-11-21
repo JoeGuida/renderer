@@ -5,8 +5,9 @@
 #include <memory>
 #include <string>
 
+#include "input.hpp"
 #include "platform.hpp"
-#include  "renderer.hpp"
+#include "renderer.hpp"
 
 struct PlatformWindow {
     HWND hwnd;
@@ -16,7 +17,7 @@ struct PlatformWindow {
     void close();
 };
 
-void run_message_loop(PlatformWindow* window, Renderer* renderer);
+void run_message_loop(PlatformWindow* window, Input* input, Renderer* renderer);
 LRESULT CALLBACK window_proc(HWND hwnd, UINT message, WPARAM wparam, LPARAM lparam);
 std::expected<std::unique_ptr<PlatformWindow>, std::string> initialize_window(HINSTANCE instance, int show_window_flags,
                                                      int width, int height, 

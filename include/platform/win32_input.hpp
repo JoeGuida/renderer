@@ -8,6 +8,7 @@
 #include "platform.hpp"
 
 struct PlatformInput {
+    bool initialized;
     std::array<RAWINPUTDEVICE, 2> devices;
     void setup_input_devices(HWND hwnd);
     std::optional<KeyEvent> get_key_event(LPARAM lparam, HWND hwnd);

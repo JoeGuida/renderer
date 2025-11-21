@@ -65,6 +65,7 @@ void handle_error(const std::expected<uint32_t, std::string>& expect) {
     Input input {
         .platform_input = std::make_unique<PlatformInput>()
     };
+    input.platform_input->initialized = false;
 
 #if defined(_WIN64) || defined(_WIN32)
     auto initialized_window = initialize_window(instance, show_window, SCREEN_WIDTH, SCREEN_HEIGHT, L"class_name", L"Renderer");
@@ -120,7 +121,7 @@ void handle_error(const std::expected<uint32_t, std::string>& expect) {
     renderer->shader = shader_program.value();
 
     setup(*renderer);
-    run_message_loop(window.platform_window.get(), renderer.get());
+    run_message_loop(window.platform_window.get(), window.input.get(), renderer.get());
 
     return 0;
 }

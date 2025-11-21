@@ -2,7 +2,7 @@
 
 #include "gl_loader.hpp"
 
-void run_message_loop(PlatformWindow* window, Renderer* renderer) {
+void run_message_loop(PlatformWindow* window, Input* input, Renderer* renderer) {
     MSG message;
     ZeroMemory(&message, sizeof(MSG));
     while (true) {
@@ -15,6 +15,9 @@ void run_message_loop(PlatformWindow* window, Renderer* renderer) {
             DispatchMessage(&message);
         }
         else {
+            input->platform_input->setup_input_devices(window->hwnd);
+            //input->platform_input->get_key_event();
+
             RECT client_rect;
             GetClientRect(window->hwnd, &client_rect);
             int client_width = client_rect.right - client_rect.left;
@@ -30,9 +33,24 @@ void run_message_loop(PlatformWindow* window, Renderer* renderer) {
 LRESULT CALLBACK window_proc(HWND hwnd, UINT message, WPARAM wparam, LPARAM lparam) {
     switch (message) {
         case WM_CREATE: {
+            LPCREATESTRUCT p_create_struct = reinterpret_cast<LPCREATESTRUCT>(lparam);
+            SetWindowLongPtr(hwnd, GWLP_USERDATA, reinterpret_cast<LONG_PTR>(p_create_struct->lpCreateParams));
+            Input* input = reinterpret_cast<Input*>(GetWindowLongPtr(hwnd, GWLP_USERDATA));
+            if(input && !input->platfrom_input->initialized) {
+                input->platform_input->setup_input_devices(hwnd);
+            }
             return 0;
         }
         case WM_INPUT: {
+            LPCREATESTRUCT p_create_struct = reinterpret_cast<LPCREATESTRUCT>(lparam);
+            SetWindowLongPtr(hwnd, GWLP_USERDATA, reinterpret_cast<LONG_PTR>(p_create_struct->lpCreateParams));
+            Input* input = reinterpret_cast<Input*>(GetWindowLongPtr(hwnd, GWLP_USERDATA));
+            if(input && input->platform_input->initialized) {
+                std::optional<KeyEvent> key_event = input->platform_input->get_key_event(lparam, hwnd);
+                if(key_event.has_value()) {
+                    InputAction::Action = input->get_action(key_event); 
+                }
+            }
             return 0;
         }
         case WM_DESTROY: {
