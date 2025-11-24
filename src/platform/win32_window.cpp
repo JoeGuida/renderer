@@ -1,5 +1,7 @@
 #include <platform/win32_window.hpp>
 
+#include <spdlog/spdlog.h>
+
 #include "gl_loader.hpp"
 
 void run_message_loop(PlatformWindow* window, Input* input, Renderer* renderer) {
@@ -33,22 +35,26 @@ void run_message_loop(PlatformWindow* window, Input* input, Renderer* renderer) 
 LRESULT CALLBACK window_proc(HWND hwnd, UINT message, WPARAM wparam, LPARAM lparam) {
     switch (message) {
         case WM_CREATE: {
+            spdlog::info("WM_CREATE");
             LPCREATESTRUCT p_create_struct = reinterpret_cast<LPCREATESTRUCT>(lparam);
             SetWindowLongPtr(hwnd, GWLP_USERDATA, reinterpret_cast<LONG_PTR>(p_create_struct->lpCreateParams));
+
             Input* input = reinterpret_cast<Input*>(GetWindowLongPtr(hwnd, GWLP_USERDATA));
-            if(input && !input->platfrom_input->initialized) {
+            if(input && !input->platform_input->initialized) {
                 input->platform_input->setup_input_devices(hwnd);
+                input->platform_input->initialized = true;
             }
             return 0;
         }
         case WM_INPUT: {
-            LPCREATESTRUCT p_create_struct = reinterpret_cast<LPCREATESTRUCT>(lparam);
-            SetWindowLongPtr(hwnd, GWLP_USERDATA, reinterpret_cast<LONG_PTR>(p_create_struct->lpCreateParams));
+            spdlog::info("WM_INPUT");
             Input* input = reinterpret_cast<Input*>(GetWindowLongPtr(hwnd, GWLP_USERDATA));
-            if(input && input->platform_input->initialized) {
-                std::optional<KeyEvent> key_event = input->platform_input->get_key_event(lparam, hwnd);
+
+            if(input) {
+                std::optional<KeyEvent> key_event = input->platform_input->get_key_event(lparam);
                 if(key_event.has_value()) {
-                    InputAction::Action = input->get_action(key_event); 
+                    KeyEvent& value = key_event.value();
+                    input->key_states[value.scancode] = value.state;
                 }
             }
             return 0;
@@ -62,9 +68,9 @@ LRESULT CALLBACK window_proc(HWND hwnd, UINT message, WPARAM wparam, LPARAM lpar
     return DefWindowProc(hwnd, message, wparam, lparam);
 }
 
-std::expected<std::unique_ptr<PlatformWindow>, std::string> initialize_window(HINSTANCE instance, int show_window_flags, 
+std::expected<std::unique_ptr<PlatformWindow>, std::string> initialize_window(HINSTANCE instance, int show_window_flags,
                                                      int width, int height, 
-                                                     const wchar_t* class_name, const wchar_t* window_title) 
+                                                     const wchar_t* class_name, const wchar_t* window_title, Input* input)
 {
     WNDCLASSEX window_class {
         .cbSize = sizeof(WNDCLASSEX),
@@ -88,7 +94,7 @@ std::expected<std::unique_ptr<PlatformWindow>, std::string> initialize_window(HI
 
     HWND hwnd = CreateWindowEx(NULL, class_name, window_title, WS_OVERLAPPEDWINDOW, 
                                  CW_USEDEFAULT, CW_USEDEFAULT, width, height, 
-                                 NULL, NULL, instance, nullptr);
+                                 NULL, NULL, instance, input);
 
     if (!hwnd) {
         return std::unexpected("error creating window");
@@ -135,6 +141,7 @@ std::expected<std::unique_ptr<PlatformWindow>, std::string> initialize_window(HI
     platform_window->hdc = hdc;
     platform_window->hglrc = hglrc;
 
+    spdlog::info("window created successfully");
     return platform_window;
 }
 

@@ -103,11 +103,14 @@ enum class ScanCode : uint32_t {
     PgUp       = 73 + 128,
     PgDn       = 81 + 128,
     Insert     = 82 + 128,
+
+    None
 };
 
 enum class KeyState : uint32_t {
     Up,
-    Down
+    Down,
+    None
 };
 
 struct KeyEvent {
