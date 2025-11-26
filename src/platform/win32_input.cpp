@@ -54,11 +54,21 @@ std::optional<KeyEvent> PlatformInput::get_key_event(LPARAM lparam) {
         else { scancode = static_cast<ScanCode>(keyboard.MakeCode); }
 
         KeyState state = KeyState::None;
-        if (keyboard.Flags & RI_KEY_MAKE) { state = KeyState::Down; }
-        if (keyboard.Flags & RI_KEY_BREAK) { state = KeyState::Up; }
+        if (keyboard.Flags == RI_KEY_MAKE) { state = KeyState::Down; }
+        if (keyboard.Flags == RI_KEY_BREAK) { state = KeyState::Up; }
 
-        if(scancode == ScanCode::None || state == KeyState::None) {
-            spdlog::info("invalid scancode or state");
+        if(scancode == ScanCode::None && !(keyboard.Flags & RI_KEY_E0)) {
+            spdlog::warn("could not determine scancode: {}", keyboard.MakeCode);
+            return std::nullopt;
+        }
+
+        if(scancode == ScanCode::None && keyboard.Flags & RI_KEY_E0) {
+            spdlog::warn("could not determine scancode: {}", keyboard.MakeCode + 128);
+            return std::nullopt;
+        }
+
+        if(state == KeyState::None) {
+            spdlog::warn("could not determine key state");
             return std::nullopt;
         }
 
@@ -68,7 +78,6 @@ std::optional<KeyEvent> PlatformInput::get_key_event(LPARAM lparam) {
         };
     }
 
-    spdlog::info("no keyboard input");
     return std::nullopt;
 }
 

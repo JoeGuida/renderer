@@ -37,10 +37,18 @@ struct InputBinding {
     std::function<void()> callback;
 };
 
+inline const std::unordered_map<InputAction, std::vector<ScanCode>> default_key_bindings {
+    { InputAction::MoveForward, { ScanCode::W, ScanCode::ArrowUp    } },
+    { InputAction::MoveBack,    { ScanCode::S, ScanCode::ArrowDown  } },
+    { InputAction::MoveLeft,    { ScanCode::A, ScanCode::ArrowLeft  } },
+    { InputAction::MoveRight,   { ScanCode::D, ScanCode::ArrowRight } },
+    { InputAction::Quit,        { ScanCode::Esc } },
+};
+
 struct Input {
     std::unique_ptr<PlatformInput> platform_input;
     std::unordered_map<ScanCode, KeyState> key_states;
-    std::unordered_map<InputAction, std::vector<ScanCode>> keys;
+    std::unordered_map<InputAction, std::vector<ScanCode>> keys = default_key_bindings;
     std::unordered_map<InputAction, std::vector<InputBinding>> bindings;
 
     void bind(const InputAction& action, const InputBinding& binding);

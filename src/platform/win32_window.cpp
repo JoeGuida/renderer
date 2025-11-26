@@ -17,8 +17,15 @@ void run_message_loop(PlatformWindow* window, Input* input, Renderer* renderer) 
             DispatchMessage(&message);
         }
         else {
-            input->platform_input->setup_input_devices(window->hwnd);
-            //input->platform_input->get_key_event();
+            for(const auto& [action, bindings] : input->bindings) {
+                for(const auto& key : input->keys[action]) {
+                    for(const auto& binding : bindings) {
+                        if(static_cast<InputState>(input->key_states[key]) == binding.state) {
+                            binding.callback();
+                        }
+                    }
+                }
+            }
 
             RECT client_rect;
             GetClientRect(window->hwnd, &client_rect);
@@ -47,7 +54,6 @@ LRESULT CALLBACK window_proc(HWND hwnd, UINT message, WPARAM wparam, LPARAM lpar
             return 0;
         }
         case WM_INPUT: {
-            spdlog::info("WM_INPUT");
             Input* input = reinterpret_cast<Input*>(GetWindowLongPtr(hwnd, GWLP_USERDATA));
 
             if(input) {
