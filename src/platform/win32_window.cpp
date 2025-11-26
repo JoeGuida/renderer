@@ -20,7 +20,8 @@ void run_message_loop(PlatformWindow* window, Input* input, Renderer* renderer) 
             for(const auto& [action, bindings] : input->bindings) {
                 for(const auto& key : input->keys[action]) {
                     for(const auto& binding : bindings) {
-                        if(static_cast<InputState>(input->key_states[key]) == binding.state) {
+                        void* i = input;
+                        if(input->input_states[key] == binding.state) {
                             binding.callback();
                         }
                     }
@@ -47,6 +48,7 @@ LRESULT CALLBACK window_proc(HWND hwnd, UINT message, WPARAM wparam, LPARAM lpar
             SetWindowLongPtr(hwnd, GWLP_USERDATA, reinterpret_cast<LONG_PTR>(p_create_struct->lpCreateParams));
 
             Input* input = reinterpret_cast<Input*>(GetWindowLongPtr(hwnd, GWLP_USERDATA));
+            void* i = input;
             if(input && !input->platform_input->initialized) {
                 input->platform_input->setup_input_devices(hwnd);
                 input->platform_input->initialized = true;
@@ -60,7 +62,7 @@ LRESULT CALLBACK window_proc(HWND hwnd, UINT message, WPARAM wparam, LPARAM lpar
                 std::optional<KeyEvent> key_event = input->platform_input->get_key_event(lparam);
                 if(key_event.has_value()) {
                     KeyEvent& value = key_event.value();
-                    input->key_states[value.scancode] = value.state;
+                    input->input_states[value.scancode] = get_input_state(value.state, input->input_states[value.scancode]);
                 }
             }
             return 0;

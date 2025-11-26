@@ -36,11 +36,9 @@ void handle_error(const std::expected<uint32_t, std::string>& expect) {
 
 #if defined(_WIN64) || defined(_WIN32)
     int WinMain(HINSTANCE instance, HINSTANCE unused, LPSTR command_line, int show_window) {
+#endif
 #if defined(DEBUG) || defined(_DEBUG)
     MessageBoxW(nullptr, L"continue?", L"continue?", MB_ICONQUESTION | MB_OK);
-#endif
-#elif defined(__linux__)
-    // linux
 #endif
 
     if(!init_logger()) {
@@ -61,14 +59,12 @@ void handle_error(const std::expected<uint32_t, std::string>& expect) {
     };
 
     std::unique_ptr<Renderer> renderer = std::make_unique<Renderer>();
-
-    Input input {
-        .platform_input = std::make_unique<PlatformInput>()
-    };
-    input.platform_input->initialized = false;
+    std::unique_ptr<Input> input = std::make_unique<Input>();
+    input->platform_input = std::make_unique<PlatformInput>();
+    input->platform_input->initialized = false;
 
 #if defined(_WIN64) || defined(_WIN32)
-    auto initialized_window = initialize_window(instance, show_window, SCREEN_WIDTH, SCREEN_HEIGHT, L"class_name", L"Renderer", &input);
+    auto initialized_window = initialize_window(instance, show_window, SCREEN_WIDTH, SCREEN_HEIGHT, L"class_name", L"Renderer", input.get());
 #elif defined(__linux__)
     // linux
 #endif
@@ -77,7 +73,7 @@ void handle_error(const std::expected<uint32_t, std::string>& expect) {
     }
     Window window {
         .platform_window = std::move(initialized_window.value()),
-        .input = std::make_unique<Input>(std::move(input)),
+        .input = std::move(input),
         .width = SCREEN_WIDTH,
         .height = SCREEN_HEIGHT
     };

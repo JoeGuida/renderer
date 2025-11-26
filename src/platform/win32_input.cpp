@@ -20,6 +20,8 @@ void PlatformInput::setup_input_devices(HWND hwnd) {
     if(RegisterRawInputDevices(devices.data(), devices.size(), sizeof(RAWINPUTDEVICE)) == FALSE) {
         spdlog::error("RegisterRawInputDevices failed!"); 
     }
+
+    initialized = true;
 }
 
 std::optional<std::vector<BYTE>> PlatformInput::get_raw_input_data(LPARAM lparam) {
