@@ -1,19 +1,40 @@
 cmake_minimum_required(VERSION 4.0)
+
 project(renderer)
+
 file(GLOB_RECURSE sources src/*.cpp)
 
 set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
-add_executable(renderer ${sources})
+add_subdirectory(lib/platform)
+add_subdirectory(lib/window)
 
-target_compile_definitions(renderer PRIVATE UNICODE _UNICODE)
-target_compile_options(renderer PRIVATE "/utf-8")
+add_executable(renderer
+    ${sources}
+)
 
-target_include_directories(renderer PRIVATE include deps deps/opengl)
+target_compile_definitions(renderer PRIVATE
+    UNICODE
+    _UNICODE
+)
 
-target_link_libraries(renderer PRIVATE gdi32.lib user32.lib opengl32.lib ${CMAKE_SOURCE_DIR}/deps/spdlog.lib)
+target_compile_options(renderer PRIVATE
+    "/utf-8"
+)
+
+target_include_directories(renderer PRIVATE
+    include
+)
+
+target_link_libraries(renderer PRIVATE
+    platform
+    window
+    gdi32
+    user32
+    opengl32
+)
 
 set_target_properties(renderer PROPERTIES WIN32_EXECUTABLE True)
 

@@ -1,5 +1,5 @@
-#ifndef RENDERER_WIN32_HPP
-#define RENDERER_WIN32_HPP
+#ifndef PLATFORM_WIN32_HPP
+#define PLATFORM_WIN32_HPP
 
 #ifndef WIN32_LEAN_AND_MEAN
 #define WIN32_LEAN_AND_MEAN
@@ -12,4 +12,3 @@
 #include <windows.h>
 
 #endif
-
