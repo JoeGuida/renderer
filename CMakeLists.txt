@@ -26,6 +26,7 @@ target_compile_options(renderer PRIVATE
 
 target_include_directories(renderer PRIVATE
     include
+    ${CMAKE_SOURCE_DIR}/lib/vulkan/include
 )
 
 target_link_libraries(renderer PRIVATE
@@ -34,6 +35,7 @@ target_link_libraries(renderer PRIVATE
     gdi32
     user32
     opengl32
+    ${CMAKE_SOURCE_DIR}/lib/vulkan/vulkan-1.lib
 )
 
 set_target_properties(renderer PROPERTIES WIN32_EXECUTABLE True)
