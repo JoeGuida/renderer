@@ -853,13 +853,18 @@ void vk_cleanup(VkContext context) {
     destroy_instance(context.instance);
 }
 
-std::expected<VkContext, std::string> vk_init(HWND hwnd, HINSTANCE instance, std::vector<const char*>& validation_layers, std::vector<const char*>& instance_extensions, std::vector<const char*>& device_extensions) {
+std::expected<VkContext, std::string> vk_init(PlatformWindow* window, HINSTANCE instance, std::vector<const char*>& validation_layers, std::vector<const char*>& instance_extensions, std::vector<const char*>& device_extensions) {
     VkContext context;
 
     // instance & physical device
     context.instance = vk_create_instance(validation_layers, instance_extensions);
-    context.debug_messenger = vk_setup_debug_messenger(context.instance);
+    //context.debug_messenger = vk_setup_debug_messenger(context.instance);
     context.physical_device = vk_get_physical_device(context.instance);
+
+    // validation_layers
+    if(!vk_enable_validation_layers(validation_layers)) {
+        return std::unexpected("validation layers requested, but not available!");
+    }
 
     // extensions
     auto supported_instance_extensions = vk_get_supported_instance_extensions();
@@ -870,9 +875,9 @@ std::expected<VkContext, std::string> vk_init(HWND hwnd, HINSTANCE instance, std
 
     auto [graphics_queue_family, queue_create_infos] = vk_find_graphics_queue_families(context.physical_device);
     context.device = vk_create_logical_device(context.physical_device, queue_create_infos, device_extensions);
-    context.surface = vk_create_window_surface(context.instance, hwnd, instance);
+    context.surface = vk_create_window_surface(context.instance, window->hwnd, instance);
     context.presentation_queue = vk_create_presentation_queue(context.device, graphics_queue_family);
-    auto swapchain = vk_create_swapchain(hwnd, context.physical_device, context.device, context.surface);
+    auto swapchain = vk_create_swapchain(window->hwnd, context.physical_device, context.device, context.surface);
     swapchain.image_views = vk_create_image_views(context.device, swapchain.images, swapchain.image_format);
     context.swapchain = swapchain;
 

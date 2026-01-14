@@ -29,11 +29,6 @@ int WinMain(HINSTANCE instance, HINSTANCE unused, LPSTR command_line, int show_w
         "VK_LAYER_KHRONOS_validation"
     };
 
-    if(!vk_enable_validation_layers(validation_layers)) {
-        spdlog::error("validation layers requested, but not available!");
-        return EXIT_FAILURE;
-    }
-
     std::vector<const char*> instance_extensions {
         "VK_EXT_debug_utils",
         "VK_KHR_surface",
@@ -44,7 +39,7 @@ int WinMain(HINSTANCE instance, HINSTANCE unused, LPSTR command_line, int show_w
         "VK_KHR_swapchain"
     };
 
-    auto vk_context = vk_init(window.handle->hwnd, instance, validation_layers, instance_extensions, device_extensions);
+    auto vk_context = vk_init(window.handle.get(), instance, validation_layers, instance_extensions, device_extensions);
     if(!vk_context.has_value()) {
         return EXIT_FAILURE;
     }

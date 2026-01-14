@@ -4,7 +4,6 @@
 #if defined(WIN32) || defined(WIN64)
 
 #define VK_USE_PLATFORM_WIN32_KHR
-
 #include <platform/windows/win32_window.hpp>
 
 #endif
@@ -83,6 +82,6 @@ void destroy_semaphore(VkDevice device, VkSemaphore semaphore);
 void destroy_surface(VkInstance instance, VkSurfaceKHR surface);
 void destroy_swapchain(VkDevice device, VkSwapchainKHR swapchain);
 void vk_cleanup(VkContext context);
-std::expected<VkContext, std::string> vk_init(HWND hwnd, HINSTANCE instance, std::vector<const char*>& validation_layers, std::vector<const char*>& instance_extensions, std::vector<const char*>& device_extensions);
+std::expected<VkContext, std::string> vk_init(PlatformWindow* window, HINSTANCE instance, std::vector<const char*>& validation_layers, std::vector<const char*>& instance_extensions, std::vector<const char*>& device_extensions);
 
 #endif
