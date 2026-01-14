@@ -26,7 +26,10 @@ target_compile_options(renderer PRIVATE
 
 target_include_directories(renderer PRIVATE
     include
+    ${CMAKE_SOURCE_DIR}/lib/vulkan/include
 )
+
+find_package(spdlog CONFIG REQUIRED)
 
 target_link_libraries(renderer PRIVATE
     platform
@@ -34,6 +37,8 @@ target_link_libraries(renderer PRIVATE
     gdi32
     user32
     opengl32
+    ${CMAKE_SOURCE_DIR}/lib/vulkan/lib/vulkan-1.lib
+    spdlog::spdlog_header_only
 )
 
 set_target_properties(renderer PROPERTIES WIN32_EXECUTABLE True)

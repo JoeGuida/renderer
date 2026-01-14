@@ -1,6 +1,8 @@
 #include <platform/windows/win32_window.hpp>
 
-void run_window(PlatformWindow* handle) {
+#include <functional>
+
+void run_window(PlatformWindow* handle, std::function<void()> draw) {
     MSG message;
     ZeroMemory(&message, sizeof(MSG));
     while (true) {
@@ -12,9 +14,8 @@ void run_window(PlatformWindow* handle) {
             TranslateMessage(&message);
             DispatchMessage(&message);
         }
-        else {
-            SwapBuffers(handle->hdc);
-        }
+
+        draw();
     }
 }
 
@@ -61,7 +62,12 @@ std::expected<std::unique_ptr<PlatformWindow>, std::string> initialize_window(HI
                                  NULL, NULL, instance, nullptr);
 
     if (!hwnd) {
-        return std::unexpected("error creating window");
+        return std::unexpected("error creating window! :: hwnd is null");
+    }
+
+    HDC hdc = GetDC(hwnd);
+    if(!hdc) {
+        return std::unexpected("error creating window! :: hdc is null");
     }
 
     ShowWindow(hwnd, show_window_flags);
@@ -69,6 +75,7 @@ std::expected<std::unique_ptr<PlatformWindow>, std::string> initialize_window(HI
 
     std::unique_ptr<PlatformWindow> handle = std::make_unique<PlatformWindow>();
     handle->hwnd = hwnd;
+    handle->hdc = hdc;
 
     return handle;
 }
