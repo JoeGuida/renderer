@@ -14,28 +14,34 @@ bool is_gpu(VkPhysicalDevice device) {
 
 VKAPI_ATTR VkBool32 VKAPI_CALL debug_callback(VkDebugUtilsMessageSeverityFlagBitsEXT severity, VkDebugUtilsMessageTypeFlagsEXT type, const VkDebugUtilsMessengerCallbackDataEXT* callback_data, void* user_data) {
     if(severity == VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT) {
-        spdlog::info(callback_data->pMessage);
+        spdlog::info("[debug] {}", callback_data->pMessage);
     }
 
     if(severity == VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT) {
-        spdlog::warn(callback_data->pMessage);
+        spdlog::warn("[warn] {}", callback_data->pMessage);
     }
 
     if(severity == VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT) {
-        spdlog::error(callback_data->pMessage);
+        spdlog::error("[error] {}", callback_data->pMessage);
     }
 
     return VK_FALSE;
 }
 
 VkResult create_debug_utils_messenger_ext(VkInstance instance, const VkDebugUtilsMessengerCreateInfoEXT* create_info, const VkAllocationCallbacks* allocator, VkDebugUtilsMessengerEXT* debug_messenger) {
-    auto func = (PFN_vkCreateDebugUtilsMessengerEXT) vkGetInstanceProcAddr(instance, "PFN_vkCreateDebugUtilsMessengerEXT");
+    auto create = (PFN_vkCreateDebugUtilsMessengerEXT) vkGetInstanceProcAddr(instance, "vkCreateDebugUtilsMessengerEXT");
 
-    if(func) {
-        return func(instance, create_info, allocator, debug_messenger);
+    if(create) {
+        return create(instance, create_info, allocator, debug_messenger);
     }
-    else {
-        return VK_ERROR_EXTENSION_NOT_PRESENT;
+
+    return VK_ERROR_EXTENSION_NOT_PRESENT;
+}
+
+void destroy_debug_utils_messenger_ext(VkInstance instance, VkDebugUtilsMessengerEXT debug_messenger) {
+    auto destroy = (PFN_vkDestroyDebugUtilsMessengerEXT) vkGetInstanceProcAddr(instance, "vkDestroyDebugUtilsMessengerEXT");
+    if(destroy) {
+        destroy(instance, debug_messenger, nullptr);
     }
 }
 
@@ -574,6 +580,9 @@ std::pair<VkPipelineLayout, VkPipeline> vk_create_graphics_pipeline(VkDevice dev
         throw std::runtime_error("failed to create graphics pipeline");
     }
 
+    vkDestroyShaderModule(device, vertex_shader_module, nullptr);
+    vkDestroyShaderModule(device, fragment_shader_module, nullptr);
+
     return { pipeline_layout, graphics_pipeline };
 }
 
@@ -821,6 +830,8 @@ void destroy_swapchain(VkDevice device, VkSwapchainKHR swapchain) {
 }
 
 void vk_cleanup(VkContext context) {
+    vkDeviceWaitIdle(context.device);
+
     for(auto& semaphore : context.semaphores) {
         destroy_semaphore(context.device, semaphore);
     }
@@ -844,12 +855,13 @@ void vk_cleanup(VkContext context) {
     }
 
     for(auto& image : context.swapchain.images) {
-        destroy_image(context.device, image);
+        //destroy_image(context.device, image);
     }
 
     destroy_swapchain(context.device, context.swapchain.swapchain);
     destroy_surface(context.instance, context.surface);
     destroy_device(context.device);
+    destroy_debug_utils_messenger_ext(context.instance, context.debug_messenger);
     destroy_instance(context.instance);
 }
 
@@ -858,7 +870,7 @@ std::expected<VkContext, std::string> vk_init(PlatformWindow* window, HINSTANCE 
 
     // instance & physical device
     context.instance = vk_create_instance(validation_layers, instance_extensions);
-    //context.debug_messenger = vk_setup_debug_messenger(context.instance);
+    context.debug_messenger = vk_setup_debug_messenger(context.instance);
     context.physical_device = vk_get_physical_device(context.instance);
 
     // validation_layers
