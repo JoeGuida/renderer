@@ -6,74 +6,11 @@
 
 #include <spdlog/spdlog.h>
 
+#include "debug_messenger.hpp"
 #include "shader.hpp"
 
 bool is_gpu(VkPhysicalDevice device) {
     return true;
-}
-
-VKAPI_ATTR VkBool32 VKAPI_CALL debug_callback(VkDebugUtilsMessageSeverityFlagBitsEXT severity, VkDebugUtilsMessageTypeFlagsEXT type, const VkDebugUtilsMessengerCallbackDataEXT* callback_data, void* user_data) {
-    if(severity == VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT) {
-        spdlog::info("[debug] {}", callback_data->pMessage);
-    }
-
-    if(severity == VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT) {
-        spdlog::warn("[warn] {}", callback_data->pMessage);
-    }
-
-    if(severity == VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT) {
-        spdlog::error("[error] {}", callback_data->pMessage);
-    }
-
-    return VK_FALSE;
-}
-
-VkResult create_debug_utils_messenger_ext(VkInstance instance, const VkDebugUtilsMessengerCreateInfoEXT* create_info, const VkAllocationCallbacks* allocator, VkDebugUtilsMessengerEXT* debug_messenger) {
-    auto create = (PFN_vkCreateDebugUtilsMessengerEXT) vkGetInstanceProcAddr(instance, "vkCreateDebugUtilsMessengerEXT");
-
-    if(create) {
-        return create(instance, create_info, allocator, debug_messenger);
-    }
-
-    return VK_ERROR_EXTENSION_NOT_PRESENT;
-}
-
-void destroy_debug_utils_messenger_ext(VkInstance instance, VkDebugUtilsMessengerEXT debug_messenger) {
-    auto destroy = (PFN_vkDestroyDebugUtilsMessengerEXT) vkGetInstanceProcAddr(instance, "vkDestroyDebugUtilsMessengerEXT");
-    if(destroy) {
-        destroy(instance, debug_messenger, nullptr);
-    }
-}
-
-VkDebugUtilsMessengerEXT vk_setup_debug_messenger(VkInstance instance) {
-    VkDebugUtilsMessengerCreateInfoEXT create_info {
-        .sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT,
-        .messageSeverity = VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT,
-        .messageType = VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT,
-        .pfnUserCallback = debug_callback,
-        .pUserData = nullptr
-    };
-
-    VkDebugUtilsMessengerEXT debug_messenger;
-    if(create_debug_utils_messenger_ext(instance, &create_info, nullptr, &debug_messenger) != VK_SUCCESS) {
-        throw std::runtime_error("failed to set up debug messenger");
-    }
-
-    return debug_messenger;
-}
-
-void log_supported_extensions(const std::unordered_set<std::string>& supported_instance_extensions, const std::unordered_set<std::string>& supported_device_extensions) {
-    spdlog::info("Supported Instance Extensions:");
-    spdlog::info("----------------------------------------------------------------------------------------------------");
-    for(const auto& extension : supported_instance_extensions) {
-        spdlog::info(extension);
-    }
-
-    spdlog::info("Supported Device Extensions:");
-    spdlog::info("----------------------------------------------------------------------------------------------------");
-    for(const auto& extension : supported_device_extensions) {
-        spdlog::info(extension);
-    }
 }
 
 bool validate_extensions(const std::unordered_set<std::string>& supported_instance_extensions, const std::unordered_set<std::string>& supported_device_extensions,
@@ -96,7 +33,7 @@ bool validate_extensions(const std::unordered_set<std::string>& supported_instan
     return true;
 }
 
-std::unordered_set<std::string> vk_get_supported_instance_extensions() {
+std::unordered_set<std::string> get_supported_instance_extensions() {
     uint32_t extension_count = 0;
     vkEnumerateInstanceExtensionProperties(nullptr, &extension_count, nullptr);
 
@@ -111,7 +48,7 @@ std::unordered_set<std::string> vk_get_supported_instance_extensions() {
     return supported_extensions;
 }
 
-std::unordered_set<std::string> vk_get_supported_device_extensions(VkPhysicalDevice physical_device) {
+std::unordered_set<std::string> get_supported_device_extensions(VkPhysicalDevice physical_device) {
     uint32_t device_extension_count = 0;
     vkEnumerateDeviceExtensionProperties(physical_device, nullptr, &device_extension_count, nullptr);
 
@@ -126,7 +63,7 @@ std::unordered_set<std::string> vk_get_supported_device_extensions(VkPhysicalDev
     return supported_extensions;
 }
 
-VkInstance vk_create_instance(const std::vector<const char*> validation_layers, const std::vector<const char*> instance_extensions) {
+VkInstance create_instance(const std::vector<const char*> validation_layers, const std::vector<const char*> instance_extensions) {
     VkInstance instance;
 
     VkApplicationInfo application_info {
@@ -155,7 +92,7 @@ VkInstance vk_create_instance(const std::vector<const char*> validation_layers, 
     return instance;
 }
 
-VkPhysicalDevice vk_get_physical_device(VkInstance instance) {
+VkPhysicalDevice get_physical_device(VkInstance instance) {
     VkPhysicalDevice physical_device = VK_NULL_HANDLE;
 
     uint32_t device_count = 0;
@@ -182,7 +119,7 @@ VkPhysicalDevice vk_get_physical_device(VkInstance instance) {
     return physical_device;
 }
 
-bool vk_enable_validation_layers(const std::vector<const char*>& validation_layers) {
+bool enable_validation_layers(const std::vector<const char*>& validation_layers) {
     uint32_t layer_count;
     vkEnumerateInstanceLayerProperties(&layer_count, nullptr);
 
@@ -207,7 +144,7 @@ bool vk_enable_validation_layers(const std::vector<const char*>& validation_laye
     return true;
 }
 
-std::pair<uint32_t, std::vector<VkDeviceQueueCreateInfo>> vk_find_graphics_queue_families(VkPhysicalDevice device) {
+std::pair<uint32_t, std::vector<VkDeviceQueueCreateInfo>> find_graphics_queue_families(VkPhysicalDevice device) {
     std::optional<uint32_t> graphics_queue_family;
     uint32_t queue_family_count = 0;
     vkGetPhysicalDeviceQueueFamilyProperties(device, &queue_family_count, nullptr);
@@ -246,7 +183,7 @@ std::pair<uint32_t, std::vector<VkDeviceQueueCreateInfo>> vk_find_graphics_queue
     return { graphics_queue_family.value(), queue_create_infos };
 }
 
-VkDevice vk_create_logical_device(VkPhysicalDevice physical_device, const std::vector<VkDeviceQueueCreateInfo>& queue_create_infos, const std::vector<const char*>& device_extensions) {
+VkDevice create_logical_device(VkPhysicalDevice physical_device, const std::vector<VkDeviceQueueCreateInfo>& queue_create_infos, const std::vector<const char*>& device_extensions) {
     VkDevice logical_device;
     VkPhysicalDeviceFeatures device_features{};
     VkDeviceCreateInfo create_info {
@@ -265,7 +202,7 @@ VkDevice vk_create_logical_device(VkPhysicalDevice physical_device, const std::v
     return logical_device;
 }
 
-VkSurfaceKHR vk_create_window_surface(VkInstance vk_instance, HWND hwnd, HINSTANCE instance) {
+VkSurfaceKHR create_window_surface(VkInstance vk_instance, HWND hwnd, HINSTANCE instance) {
     VkSurfaceKHR surface;
 
     VkWin32SurfaceCreateInfoKHR create_info {
@@ -281,7 +218,7 @@ VkSurfaceKHR vk_create_window_surface(VkInstance vk_instance, HWND hwnd, HINSTAN
     return surface;
 }
 
-VkQueue vk_create_presentation_queue(VkDevice logical_device, uint32_t graphics_queue_family) {
+VkQueue create_presentation_queue(VkDevice logical_device, uint32_t graphics_queue_family) {
     VkQueue presentation_queue;
 
     vkGetDeviceQueue(logical_device, graphics_queue_family, 0, &presentation_queue);
@@ -289,7 +226,7 @@ VkQueue vk_create_presentation_queue(VkDevice logical_device, uint32_t graphics_
     return presentation_queue;
 }
 
-Swapchain vk_create_swapchain(HWND hwnd, VkPhysicalDevice physical_device, VkDevice logical_device, VkSurfaceKHR surface) {
+Swapchain create_swapchain(HWND hwnd, VkPhysicalDevice physical_device, VkDevice logical_device, VkSurfaceKHR surface) {
     VkFormat surface_format = VK_FORMAT_B8G8R8A8_SRGB;
     VkColorSpaceKHR color_space = VK_COLOR_SPACE_SRGB_NONLINEAR_KHR;
     VkPresentModeKHR present_mode = VK_PRESENT_MODE_MAILBOX_KHR;
@@ -341,7 +278,7 @@ Swapchain vk_create_swapchain(HWND hwnd, VkPhysicalDevice physical_device, VkDev
     };
 }
 
-std::vector<VkImageView> vk_create_image_views(VkDevice device, const std::vector<VkImage>& swapchain_images, VkFormat image_format) {
+std::vector<VkImageView> create_image_views(VkDevice device, const std::vector<VkImage>& swapchain_images, VkFormat image_format) {
     std::vector<VkImageView> swapchain_image_views;
     swapchain_image_views.resize(swapchain_images.size());
 
@@ -374,7 +311,7 @@ std::vector<VkImageView> vk_create_image_views(VkDevice device, const std::vecto
     return swapchain_image_views;
 }
 
-VkShaderModule vk_create_shader_module(VkDevice device, const std::vector<char>& code) {
+VkShaderModule create_shader_module(VkDevice device, const std::vector<char>& code) {
     VkShaderModuleCreateInfo create_info{
         .sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO,
         .codeSize = code.size(),
@@ -389,7 +326,7 @@ VkShaderModule vk_create_shader_module(VkDevice device, const std::vector<char>&
     return shader_module;
 }
 
-std::pair<VkRenderPass, VkRenderPassCreateInfo> vk_create_render_pass(VkDevice device, VkFormat format) {
+std::pair<VkRenderPass, VkRenderPassCreateInfo> create_render_pass(VkDevice device, VkFormat format) {
     VkAttachmentDescription color_attachment{
         .format = format,
         .samples = VK_SAMPLE_COUNT_1_BIT,
@@ -412,6 +349,15 @@ std::pair<VkRenderPass, VkRenderPassCreateInfo> vk_create_render_pass(VkDevice d
         .pColorAttachments = &color_attachment_reference
     };
 
+    VkSubpassDependency dependency {
+        .srcSubpass = VK_SUBPASS_EXTERNAL,
+        .dstSubpass = 0,
+        .srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
+        .dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
+        .srcAccessMask = 0,
+        .dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT
+    };
+
     VkRenderPass render_pass;
     VkPipelineLayout pipeline_layout;
     VkRenderPassCreateInfo render_pass_info {
@@ -419,7 +365,9 @@ std::pair<VkRenderPass, VkRenderPassCreateInfo> vk_create_render_pass(VkDevice d
         .attachmentCount = 1,
         .pAttachments = &color_attachment,
         .subpassCount = 1,
-        .pSubpasses = &subpass
+        .pSubpasses = &subpass,
+        .dependencyCount = 1,
+        .pDependencies = &dependency
     };
 
     if(vkCreateRenderPass(device, &render_pass_info, nullptr, &render_pass) != VK_SUCCESS) {
@@ -429,12 +377,12 @@ std::pair<VkRenderPass, VkRenderPassCreateInfo> vk_create_render_pass(VkDevice d
     return { render_pass, render_pass_info };
 }
 
-std::pair<VkPipelineLayout, VkPipeline> vk_create_graphics_pipeline(VkDevice device, VkExtent2D extent, VkRenderPass render_pass) {
+std::pair<VkPipelineLayout, VkPipeline> create_graphics_pipeline(VkDevice device, VkExtent2D extent, VkRenderPass render_pass) {
     auto vertex_shader_code = read_file(std::filesystem::current_path() / "shaders" / "vert.spv");
     auto fragment_shader_code = read_file(std::filesystem::current_path() / "shaders" / "frag.spv");
 
-    VkShaderModule vertex_shader_module = vk_create_shader_module(device, vertex_shader_code);
-    VkShaderModule fragment_shader_module = vk_create_shader_module(device, fragment_shader_code);
+    VkShaderModule vertex_shader_module = create_shader_module(device, vertex_shader_code);
+    VkShaderModule fragment_shader_module = create_shader_module(device, fragment_shader_code);
 
     VkPipelineShaderStageCreateInfo vertex_shader_stage_info{
         .sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO,
@@ -586,7 +534,7 @@ std::pair<VkPipelineLayout, VkPipeline> vk_create_graphics_pipeline(VkDevice dev
     return { pipeline_layout, graphics_pipeline };
 }
 
-std::vector<VkFramebuffer> vk_create_framebuffers(VkDevice device, const std::vector<VkImageView>& swapchain_image_views, VkExtent2D swapchain_extent, VkRenderPass render_pass) {
+std::vector<VkFramebuffer> create_framebuffers(VkDevice device, const std::vector<VkImageView>& swapchain_image_views, VkExtent2D swapchain_extent, VkRenderPass render_pass) {
     std::vector<VkFramebuffer> swapchain_framebuffers;
     swapchain_framebuffers.resize(swapchain_image_views.size());
 
@@ -611,8 +559,8 @@ std::vector<VkFramebuffer> vk_create_framebuffers(VkDevice device, const std::ve
     return swapchain_framebuffers;
 }
 
-VkCommandPool vk_create_command_pool(VkPhysicalDevice physical_device, VkDevice device) {
-    uint32_t graphics_queue_family = vk_find_graphics_queue_families(physical_device).first;
+VkCommandPool create_command_pool(VkPhysicalDevice physical_device, VkDevice device) {
+    uint32_t graphics_queue_family = find_graphics_queue_families(physical_device).first;
 
     VkCommandPoolCreateInfo pool_info {
         .sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO,
@@ -628,7 +576,7 @@ VkCommandPool vk_create_command_pool(VkPhysicalDevice physical_device, VkDevice 
     return command_pool;
 }
 
-VkCommandBuffer vk_create_command_buffer(VkDevice device, VkCommandPool command_pool) {
+VkCommandBuffer create_command_buffer(VkDevice device, VkCommandPool command_pool) {
     VkCommandBufferAllocateInfo alloc_info {
         .sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO,
         .commandPool = command_pool,
@@ -644,7 +592,7 @@ VkCommandBuffer vk_create_command_buffer(VkDevice device, VkCommandPool command_
     return command_buffer;
 }
 
-void vk_record_command_buffer(Swapchain& swapchain, VkCommandBuffer command_buffer, VkRenderPass render_pass, VkFramebuffer framebuffer, VkPipeline graphics_pipeline) {
+void record_command_buffer(Swapchain& swapchain, VkCommandBuffer command_buffer, VkRenderPass render_pass, VkFramebuffer framebuffer, VkPipeline graphics_pipeline) {
     VkCommandBufferBeginInfo begin_info {
         .sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO,
         .flags = 0,
@@ -697,7 +645,7 @@ void vk_record_command_buffer(Swapchain& swapchain, VkCommandBuffer command_buff
     }
 };
 
-std::pair<std::vector<VkSemaphore>, std::vector<VkFence>> vk_create_sync_objects(VkDevice device) {
+std::pair<std::vector<VkSemaphore>, std::vector<VkFence>> create_sync_objects(VkDevice device) {
     VkSemaphore image_available_semaphore;
     VkSemaphore render_finished_semaphore;
     VkFence in_flight_fence;
@@ -721,7 +669,7 @@ std::pair<std::vector<VkSemaphore>, std::vector<VkFence>> vk_create_sync_objects
     return { { image_available_semaphore, render_finished_semaphore }, { in_flight_fence } };
 }
 
-void vk_draw(VkContext context) {
+void draw(VkContext context) {
     vkWaitForFences(context.device, 1, &context.fences[0], VK_TRUE, UINT64_MAX);
     vkResetFences(context.device, 1, &context.fences[0]);
 
@@ -729,7 +677,7 @@ void vk_draw(VkContext context) {
     vkAcquireNextImageKHR(context.device, context.swapchain.swapchain, UINT64_MAX, context.semaphores[0], VK_NULL_HANDLE, &image_index);
 
     vkResetCommandBuffer(context.command_buffer, 0);
-    vk_record_command_buffer(context.swapchain, context.command_buffer, context.render_pass, context.framebuffers[image_index], context.pipeline);
+    record_command_buffer(context.swapchain, context.command_buffer, context.render_pass, context.framebuffers[image_index], context.pipeline);
 
     VkSemaphore wait_semaphores[] = { context.semaphores[0] };
     VkPipelineStageFlags wait_stages[] = { VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT };
@@ -750,17 +698,7 @@ void vk_draw(VkContext context) {
         throw std::runtime_error("failed to submit draw command buffer");
     }
 
-    VkSubpassDependency dependency {
-        .srcSubpass = VK_SUBPASS_EXTERNAL,
-        .dstSubpass = 0,
-        .srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
-        .dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
-        .srcAccessMask = 0,
-        .dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT
-    };
 
-    //render_pass_info.dependencyCount = 1;
-    //render_pass_info.pDependencies = &dependency;
 
     VkSwapchainKHR swapchains[] = { context.swapchain.swapchain };
 
@@ -829,7 +767,7 @@ void destroy_swapchain(VkDevice device, VkSwapchainKHR swapchain) {
     vkDestroySwapchainKHR(device, swapchain, nullptr);
 }
 
-void vk_cleanup(VkContext context) {
+void cleanup(VkContext context) {
     vkDeviceWaitIdle(context.device);
 
     for(auto& semaphore : context.semaphores) {
@@ -865,47 +803,51 @@ void vk_cleanup(VkContext context) {
     destroy_instance(context.instance);
 }
 
-std::expected<VkContext, std::string> vk_init(PlatformWindow* window, HINSTANCE instance, std::vector<const char*>& validation_layers, std::vector<const char*>& instance_extensions, std::vector<const char*>& device_extensions) {
+std::expected<VkContext, std::string> init_renderer(PlatformWindow* window, HINSTANCE instance, std::vector<const char*>& validation_layers, std::vector<const char*>& instance_extensions, std::vector<const char*>& device_extensions) {
     VkContext context;
 
     // instance & physical device
-    context.instance = vk_create_instance(validation_layers, instance_extensions);
-    context.debug_messenger = vk_setup_debug_messenger(context.instance);
-    context.physical_device = vk_get_physical_device(context.instance);
+    context.instance = create_instance(validation_layers, instance_extensions);
+    context.debug_messenger = setup_debug_messenger(context.instance);
+    context.physical_device = get_physical_device(context.instance);
 
     // validation_layers
-    if(!vk_enable_validation_layers(validation_layers)) {
+    if(!enable_validation_layers(validation_layers)) {
         return std::unexpected("validation layers requested, but not available!");
     }
 
     // extensions
-    auto supported_instance_extensions = vk_get_supported_instance_extensions();
-    auto supported_device_extensions = vk_get_supported_device_extensions(context.physical_device);
+    auto supported_instance_extensions = get_supported_instance_extensions();
+    auto supported_device_extensions = get_supported_device_extensions(context.physical_device);
     if(!validate_extensions(supported_instance_extensions, supported_device_extensions, instance_extensions, device_extensions)) {
         return std::unexpected("requested extensions not available");
     }
 
-    auto [graphics_queue_family, queue_create_infos] = vk_find_graphics_queue_families(context.physical_device);
-    context.device = vk_create_logical_device(context.physical_device, queue_create_infos, device_extensions);
-    context.surface = vk_create_window_surface(context.instance, window->hwnd, instance);
-    context.presentation_queue = vk_create_presentation_queue(context.device, graphics_queue_family);
-    auto swapchain = vk_create_swapchain(window->hwnd, context.physical_device, context.device, context.surface);
-    swapchain.image_views = vk_create_image_views(context.device, swapchain.images, swapchain.image_format);
+    // swapchain
+    auto [graphics_queue_family, queue_create_infos] = find_graphics_queue_families(context.physical_device);
+    context.device = create_logical_device(context.physical_device, queue_create_infos, device_extensions);
+    context.surface = create_window_surface(context.instance, window->hwnd, instance);
+    context.presentation_queue = create_presentation_queue(context.device, graphics_queue_family);
+    auto swapchain = create_swapchain(window->hwnd, context.physical_device, context.device, context.surface);
+    swapchain.image_views = create_image_views(context.device, swapchain.images, swapchain.image_format);
     context.swapchain = swapchain;
 
-    auto [vk_render_pass, vk_render_pass_create_info] = vk_create_render_pass(context.device, swapchain.image_format);
-    context.render_pass = vk_render_pass;
+    // render pass
+    auto [render_pass, render_pass_create_info] = create_render_pass(context.device, swapchain.image_format);
+    context.render_pass = render_pass;
 
-    auto [vk_pipeline_layout, vk_graphics_pipeline] = vk_create_graphics_pipeline(context.device, swapchain.extent, vk_render_pass);
-    context.pipeline_layout = vk_pipeline_layout;
-    context.pipeline = vk_graphics_pipeline;
+    // graphics pipeline
+    auto [pipeline_layout, graphics_pipeline] = create_graphics_pipeline(context.device, swapchain.extent, render_pass);
+    context.pipeline_layout = pipeline_layout;
+    context.pipeline = graphics_pipeline;
 
-    context.framebuffers = vk_create_framebuffers(context.device, swapchain.image_views, swapchain.extent, vk_render_pass);
-    context.command_pool = vk_create_command_pool(context.physical_device, context.device);
-    context.command_buffer = vk_create_command_buffer(context.device, context.command_pool);
-    auto [vk_semaphores, vk_fences] = vk_create_sync_objects(context.device);
-    context.semaphores = vk_semaphores;
-    context.fences = vk_fences;
+    // commands, semaphore/fences
+    context.framebuffers = create_framebuffers(context.device, swapchain.image_views, swapchain.extent, render_pass);
+    context.command_pool = create_command_pool(context.physical_device, context.device);
+    context.command_buffer = create_command_buffer(context.device, context.command_pool);
+    auto [semaphores, fences] = create_sync_objects(context.device);
+    context.semaphores = semaphores;
+    context.fences = fences;
 
     return context;
 }

@@ -4,6 +4,7 @@
 #if defined(WIN32) || defined(WIN64)
 
 #define VK_USE_PLATFORM_WIN32_KHR
+
 #include <platform/windows/win32_window.hpp>
 
 #endif
@@ -42,32 +43,29 @@ struct VkContext {
 };
 
 bool is_gpu(VkPhysicalDevice device);
-VKAPI_ATTR VkBool32 VKAPI_CALL debug_callback(VkDebugUtilsMessageSeverityFlagBitsEXT severity, VkDebugUtilsMessageTypeFlagsEXT type, const VkDebugUtilsMessengerCallbackDataEXT* callback_data, void* user_data);
-VkResult create_debug_utils_messenger_ext(VkInstance instance, const VkDebugUtilsMessengerCreateInfoEXT* create_info, const VkAllocationCallbacks* allocator, VkDebugUtilsMessengerEXT* debug_messenger);
-VkDebugUtilsMessengerEXT vk_setup_debug_messenger(VkInstance instance);
-void log_supported_extensions(const std::unordered_set<std::string>& supported_instance_extensions, const std::unordered_set<std::string>& supported_device_extensions);
 bool validate_extensions(const std::unordered_set<std::string>& supported_instance_extensions, const std::unordered_set<std::string>& supported_device_extensions,
                          const std::vector<const char*>& instance_extensions, const std::vector<const char*>& device_extensions);
-std::unordered_set<std::string> vk_get_supported_instance_extensions();
-std::unordered_set<std::string> vk_get_supported_device_extensions(VkPhysicalDevice physical_device);
-VkInstance vk_create_instance(const std::vector<const char*> validation_layers, const std::vector<const char*> instance_extensions);
-VkPhysicalDevice vk_get_physical_device(VkInstance instance);
-bool vk_enable_validation_layers(const std::vector<const char*>& validation_layers);
-std::pair<uint32_t, std::vector<VkDeviceQueueCreateInfo>> vk_find_graphics_queue_families(VkPhysicalDevice device);
-VkDevice vk_create_logical_device(VkPhysicalDevice physical_device, const std::vector<VkDeviceQueueCreateInfo>& queue_create_infos, const std::vector<const char*>& device_extensions);
-VkSurfaceKHR vk_create_window_surface(VkInstance vk_instance, HWND hwnd, HINSTANCE instance);
-VkQueue vk_create_presentation_queue(VkDevice logical_device, uint32_t graphics_queue_family);
-Swapchain vk_create_swapchain(HWND hwnd, VkPhysicalDevice physical_device, VkDevice logical_device, VkSurfaceKHR surface);
-std::vector<VkImageView> vk_create_image_views(VkDevice device, const std::vector<VkImage>& swapchain_images, VkFormat image_format);
-VkShaderModule vk_create_shader_module(VkDevice device, const std::vector<char>& code);
-std::pair<VkRenderPass, VkRenderPassCreateInfo> vk_create_render_pass(VkDevice device, VkFormat format);
-std::pair<VkPipelineLayout, VkPipeline> vk_create_graphics_pipeline(VkDevice device, VkExtent2D extent, VkRenderPass render_pass);
-std::vector<VkFramebuffer> vk_create_framebuffers(VkDevice device, const std::vector<VkImageView>& swapchain_image_views, VkExtent2D swapchain_extent, VkRenderPass render_pass);
-VkCommandPool vk_create_command_pool(VkPhysicalDevice physical_device, VkDevice device);
-VkCommandBuffer vk_create_command_buffer(VkDevice device, VkCommandPool command_pool);
-void vk_record_command_buffer(Swapchain& swapchain, VkCommandBuffer command_buffer, VkRenderPass render_pass, VkFramebuffer framebuffer, VkPipeline graphics_pipeline);
-std::pair<std::vector<VkSemaphore>, std::vector<VkFence>> vk_create_sync_objects(VkDevice device);
-void vk_draw(VkContext context);
+std::unordered_set<std::string> get_supported_instance_extensions();
+std::unordered_set<std::string> get_supported_device_extensions(VkPhysicalDevice physical_device);
+VkInstance create_instance(const std::vector<const char*> validation_layers, const std::vector<const char*> instance_extensions);
+VkPhysicalDevice get_physical_device(VkInstance instance);
+bool enable_validation_layers(const std::vector<const char*>& validation_layers);
+std::pair<uint32_t, std::vector<VkDeviceQueueCreateInfo>> find_graphics_queue_families(VkPhysicalDevice device);
+VkDevice create_logical_device(VkPhysicalDevice physical_device, const std::vector<VkDeviceQueueCreateInfo>& queue_create_infos, const std::vector<const char*>& device_extensions);
+VkSurfaceKHR create_window_surface(VkInstance vk_instance, HWND hwnd, HINSTANCE instance);
+VkQueue create_presentation_queue(VkDevice logical_device, uint32_t graphics_queue_family);
+Swapchain create_swapchain(HWND hwnd, VkPhysicalDevice physical_device, VkDevice logical_device, VkSurfaceKHR surface);
+std::vector<VkImageView> create_image_views(VkDevice device, const std::vector<VkImage>& swapchain_images, VkFormat image_format);
+VkShaderModule create_shader_module(VkDevice device, const std::vector<char>& code);
+std::pair<VkRenderPass, VkRenderPassCreateInfo> create_render_pass(VkDevice device, VkFormat format);
+std::pair<VkPipelineLayout, VkPipeline> create_graphics_pipeline(VkDevice device, VkExtent2D extent, VkRenderPass render_pass);
+std::vector<VkFramebuffer> create_framebuffers(VkDevice device, const std::vector<VkImageView>& swapchain_image_views, VkExtent2D swapchain_extent, VkRenderPass render_pass);
+VkCommandPool create_command_pool(VkPhysicalDevice physical_device, VkDevice device);
+VkCommandBuffer create_command_buffer(VkDevice device, VkCommandPool command_pool);
+void record_command_buffer(Swapchain& swapchain, VkCommandBuffer command_buffer, VkRenderPass render_pass, VkFramebuffer framebuffer, VkPipeline graphics_pipeline);
+std::pair<std::vector<VkSemaphore>, std::vector<VkFence>> create_sync_objects(VkDevice device);
+void draw(VkContext context);
+
 void destroy_command_pool(VkDevice device, VkCommandPool command_pool);
 void destroy_device(VkDevice device);
 void destroy_fence(VkDevice device, VkFence fence);
@@ -81,7 +79,8 @@ void destroy_render_pass(VkDevice device, VkRenderPass render_pass);
 void destroy_semaphore(VkDevice device, VkSemaphore semaphore);
 void destroy_surface(VkInstance instance, VkSurfaceKHR surface);
 void destroy_swapchain(VkDevice device, VkSwapchainKHR swapchain);
-void vk_cleanup(VkContext context);
-std::expected<VkContext, std::string> vk_init(PlatformWindow* window, HINSTANCE instance, std::vector<const char*>& validation_layers, std::vector<const char*>& instance_extensions, std::vector<const char*>& device_extensions);
+void cleanup(VkContext context);
+
+std::expected<VkContext, std::string> init_renderer(PlatformWindow* window, HINSTANCE instance, std::vector<const char*>& validation_layers, std::vector<const char*>& instance_extensions, std::vector<const char*>& device_extensions);
 
 #endif
