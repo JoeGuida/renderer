@@ -1,5 +1,7 @@
 #include "api_vulkan.hpp"
 
+#include <cassert>
+#include <cstdint>
 #include <filesystem>
 #include <functional>
 #include <unordered_set>
@@ -7,60 +9,140 @@
 #include <spdlog/spdlog.h>
 
 #include "debug_messenger.hpp"
+#include "device.hpp"
+#include "extension.hpp"
 #include "shader.hpp"
+#include "swapchain.hpp"
 
-bool is_gpu(VkPhysicalDevice device) {
-    return true;
-}
+std::optional<QueueFamily> get_queue_family(VkPhysicalDevice physical_device, VkSurfaceKHR surface) {
+    uint32_t queue_family_count = 0;
+    vkGetPhysicalDeviceQueueFamilyProperties(physical_device, &queue_family_count, nullptr);
 
-bool validate_extensions(const std::unordered_set<std::string>& supported_instance_extensions, const std::unordered_set<std::string>& supported_device_extensions,
-                         const std::vector<const char*>& instance_extensions, const std::vector<const char*>& device_extensions)
-{
-    for(const auto& extension : instance_extensions) {
-        if(!supported_instance_extensions.contains(extension)) {
-            spdlog::error("requested instance extension not found! :: {}", extension);
-            return false;
+    std::vector<VkQueueFamilyProperties> queue_families(queue_family_count);
+    vkGetPhysicalDeviceQueueFamilyProperties(physical_device, &queue_family_count, queue_families.data());
+
+    std::optional<uint32_t> graphics;
+    std::optional<uint32_t> presentation;
+
+    for(uint32_t i = 0; i < queue_families.size(); i++) {
+        bool graphics_supported = queue_families[i].queueFlags & VK_QUEUE_GRAPHICS_BIT;
+        VkBool32 presentation_supported = VK_FALSE;
+        vkGetPhysicalDeviceSurfaceSupportKHR(physical_device, i, surface, &presentation_supported);
+
+        if(graphics_supported && presentation_supported) {
+            return QueueFamily {
+                .graphics = i,
+                .presentation = i
+            };
+        }
+
+        if(!graphics && graphics_supported) {
+            graphics = i;
+        }
+
+        if(!presentation && presentation_supported) {
+            presentation = i;
         }
     }
 
-    for(const auto& extension : device_extensions) {
-        if(!supported_device_extensions.contains(extension)) {
-            spdlog::error("requested device extension not found! :: {}", extension);
-            return false;
+    if(graphics.has_value() && presentation.has_value()) {
+        return QueueFamily {
+            .graphics = graphics.value(),
+            .presentation = presentation.value()
+        };
+    }
+
+    return std::nullopt;
+}
+
+int score_device(VkPhysicalDevice physical_device) {
+    VkPhysicalDeviceProperties properties;
+    vkGetPhysicalDeviceProperties(physical_device, &properties);
+
+    int score = 0;
+    if(properties.deviceType == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU) {
+        score += 1000;
+    }
+
+    score += properties.limits.maxImageDimension2D;
+
+    return score;
+}
+
+bool is_gpu_usable(VkPhysicalDevice physical_device, VkSurfaceKHR surface, const std::vector<const char*> required_extensions) {
+    if(!get_queue_family(physical_device, surface).has_value()) {
+        return false;
+    };
+
+    if(!device_extensions_supported(physical_device, required_extensions)) {
+        return false;
+    }
+
+    SwapchainSupportInfo swapchain_support = query_swapchain_support(physical_device, surface);
+    return !swapchain_support.formats.empty() && !swapchain_support.present_modes.empty();
+}
+
+VkPhysicalDevice get_physical_device(VkInstance instance, VkSurfaceKHR surface, const std::vector<const char*>& device_extensions) {
+    VkPhysicalDevice physical_device = VK_NULL_HANDLE;
+
+    uint32_t device_count = 0;
+    vkEnumeratePhysicalDevices(instance, &device_count, nullptr);
+
+    if(device_count == 0) {
+        throw std::runtime_error("no physical devices found");
+    }
+
+    std::vector<VkPhysicalDevice> devices(device_count);
+    vkEnumeratePhysicalDevices(instance, &device_count, devices.data());
+
+    std::vector<int> scores;
+    for(const auto& device : devices) {
+        if(is_gpu_usable(device, surface, device_extensions)) {
+            scores.push_back(score_device(device));
+        }
+        else {
+            scores.push_back(0);
         }
     }
 
-    return true;
-}
-
-std::unordered_set<std::string> get_supported_instance_extensions() {
-    uint32_t extension_count = 0;
-    vkEnumerateInstanceExtensionProperties(nullptr, &extension_count, nullptr);
-
-    std::vector<VkExtensionProperties> extensions(extension_count);
-    vkEnumerateInstanceExtensionProperties(nullptr, &extension_count, extensions.data());
-
-    std::unordered_set<std::string> supported_extensions;
-    for(const auto& extension : extensions) {
-        supported_extensions.insert(std::string(extension.extensionName));
+    int highest_score = 0;
+    int highest_score_index = -1;
+    for(int i = 0; i < scores.size(); i++) {
+        if(scores[i] > highest_score) {
+            highest_score = scores[i];
+            highest_score_index = i;
+        }
     }
 
-    return supported_extensions;
-}
-
-std::unordered_set<std::string> get_supported_device_extensions(VkPhysicalDevice physical_device) {
-    uint32_t device_extension_count = 0;
-    vkEnumerateDeviceExtensionProperties(physical_device, nullptr, &device_extension_count, nullptr);
-
-    std::vector<VkExtensionProperties> device_extensions(device_extension_count);
-    vkEnumerateDeviceExtensionProperties(physical_device, nullptr, &device_extension_count, device_extensions.data());
-
-    std::unordered_set<std::string> supported_extensions;
-    for(const auto& extension : device_extensions) {
-        supported_extensions.insert(std::string(extension.extensionName));
+    if(highest_score_index != -1) {
+        physical_device = devices[highest_score_index];
     }
 
-    return supported_extensions;
+    if(physical_device == VK_NULL_HANDLE) {
+        throw std::runtime_error("no suitable physical device was found");
+    }
+
+    return physical_device;
+}
+
+VkSurfaceFormatKHR choose_surface_format(const std::vector<VkSurfaceFormatKHR>& available_formats, VkFormat format, VkColorSpaceKHR color_space) {
+    for(const auto& available_format : available_formats) {
+        if(available_format.format == format && available_format.colorSpace == color_space) {
+            return available_format;
+        }
+    }
+
+    return available_formats[0];
+}
+
+VkPresentModeKHR choose_present_mode(const std::vector<VkPresentModeKHR>& available_present_modes, VkPresentModeKHR mode) {
+    for(const auto& available_mode : available_present_modes) {
+        if(available_mode == mode) {
+            return mode;
+        }
+    }
+
+    return available_present_modes[0];
 }
 
 VkInstance create_instance(const std::vector<const char*> validation_layers, const std::vector<const char*> instance_extensions) {
@@ -92,34 +174,7 @@ VkInstance create_instance(const std::vector<const char*> validation_layers, con
     return instance;
 }
 
-VkPhysicalDevice get_physical_device(VkInstance instance) {
-    VkPhysicalDevice physical_device = VK_NULL_HANDLE;
-
-    uint32_t device_count = 0;
-    vkEnumeratePhysicalDevices(instance, &device_count, nullptr);
-
-    if(device_count == 0) {
-        throw std::runtime_error("no physical devices found");
-    }
-
-    std::vector<VkPhysicalDevice> devices(device_count);
-    vkEnumeratePhysicalDevices(instance, &device_count, devices.data());
-
-    for(const auto& device : devices) {
-        if(is_gpu(device)) {
-            physical_device = device;
-            break;
-        }
-    }
-
-    if(physical_device == VK_NULL_HANDLE) {
-        throw std::runtime_error("no suitable physical device was found");
-    }
-
-    return physical_device;
-}
-
-bool enable_validation_layers(const std::vector<const char*>& validation_layers) {
+bool validation_layers_available(const std::vector<const char*>& validation_layers) {
     uint32_t layer_count;
     vkEnumerateInstanceLayerProperties(&layer_count, nullptr);
 
@@ -144,46 +199,34 @@ bool enable_validation_layers(const std::vector<const char*>& validation_layers)
     return true;
 }
 
-std::pair<uint32_t, std::vector<VkDeviceQueueCreateInfo>> find_graphics_queue_families(VkPhysicalDevice device) {
-    std::optional<uint32_t> graphics_queue_family;
-    uint32_t queue_family_count = 0;
-    vkGetPhysicalDeviceQueueFamilyProperties(device, &queue_family_count, nullptr);
-
-    std::vector<VkQueueFamilyProperties> queue_families(queue_family_count);
-    vkGetPhysicalDeviceQueueFamilyProperties(device, &queue_family_count, queue_families.data());
-
-    int i = 0;
-    for(const auto& queue_family : queue_families) {
-        if(queue_family.queueFlags & VK_QUEUE_GRAPHICS_BIT) {
-            graphics_queue_family = i;
-            break;
-        }
-
-        i++;
-    }
-
-    if(!graphics_queue_family.has_value()) {
-        throw std::runtime_error("could not find any valid graphics queue families");
-    }
-
-    std::vector<VkDeviceQueueCreateInfo> queue_create_infos;
-    std::unordered_set<uint32_t> unique_queue_families { graphics_queue_family.value(), graphics_queue_family.value() };
-
+VkDevice create_logical_device(VkPhysicalDevice device, QueueFamily queue_family, const std::vector<const char*>& device_extensions) {
     float queue_priority = 1.0f;
-    for(uint32_t queue_family : unique_queue_families) {
+
+    std::vector<uint32_t> unique_families { queue_family.graphics, queue_family.presentation };
+    std::vector<VkDeviceQueueCreateInfo> queue_create_infos;
+    queue_create_infos.reserve(unique_families.size());
+
+    if(queue_family.graphics == queue_family.presentation) {
         VkDeviceQueueCreateInfo queue_create_info {
             .sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO,
-            .queueFamilyIndex = queue_family,
+            .queueFamilyIndex = queue_family.graphics,
             .queueCount = 1,
             .pQueuePriorities = &queue_priority
         };
         queue_create_infos.push_back(queue_create_info);
     }
+    else {
+        for(uint32_t queue_family : unique_families) {
+            VkDeviceQueueCreateInfo queue_create_info {
+                .sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO,
+                .queueFamilyIndex = queue_family,
+                .queueCount = 1,
+                .pQueuePriorities = &queue_priority
+            };
+            queue_create_infos.push_back(queue_create_info);
+        }
+    }
 
-    return { graphics_queue_family.value(), queue_create_infos };
-}
-
-VkDevice create_logical_device(VkPhysicalDevice physical_device, const std::vector<VkDeviceQueueCreateInfo>& queue_create_infos, const std::vector<const char*>& device_extensions) {
     VkDevice logical_device;
     VkPhysicalDeviceFeatures device_features{};
     VkDeviceCreateInfo create_info {
@@ -195,7 +238,7 @@ VkDevice create_logical_device(VkPhysicalDevice physical_device, const std::vect
         .pEnabledFeatures = &device_features
     };
 
-    if(vkCreateDevice(physical_device, &create_info, nullptr, &logical_device) != VK_SUCCESS) {
+    if(vkCreateDevice(device, &create_info, nullptr, &logical_device) != VK_SUCCESS) {
         throw std::runtime_error("failed to create logical device");
     }
 
@@ -218,63 +261,16 @@ VkSurfaceKHR create_window_surface(VkInstance vk_instance, HWND hwnd, HINSTANCE 
     return surface;
 }
 
-VkQueue create_presentation_queue(VkDevice logical_device, uint32_t graphics_queue_family) {
+RenderQueue get_queues(VkDevice logical_device, uint32_t graphics_queuee_id, uint32_t presentation_queue_id) {
+    VkQueue graphics_queue;
+    vkGetDeviceQueue(logical_device, graphics_queuee_id, 0, &graphics_queue);
+
     VkQueue presentation_queue;
+    vkGetDeviceQueue(logical_device, presentation_queue_id, 0, &presentation_queue);
 
-    vkGetDeviceQueue(logical_device, graphics_queue_family, 0, &presentation_queue);
-
-    return presentation_queue;
-}
-
-Swapchain create_swapchain(HWND hwnd, VkPhysicalDevice physical_device, VkDevice logical_device, VkSurfaceKHR surface) {
-    VkFormat surface_format = VK_FORMAT_B8G8R8A8_SRGB;
-    VkColorSpaceKHR color_space = VK_COLOR_SPACE_SRGB_NONLINEAR_KHR;
-    VkPresentModeKHR present_mode = VK_PRESENT_MODE_MAILBOX_KHR;
-
-    VkSurfaceCapabilitiesKHR capabilities;
-    vkGetPhysicalDeviceSurfaceCapabilitiesKHR(physical_device, surface, &capabilities);
-
-    RECT client_rect;
-    GetClientRect(hwnd, &client_rect);
-    VkExtent2D extent = { 
-        static_cast<uint32_t>(client_rect.right - client_rect.left),
-        static_cast<uint32_t>(client_rect.bottom - client_rect.top)
-    };
-
-    uint32_t image_count = 2;
-
-    VkSwapchainCreateInfoKHR create_info {
-        .sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR,
-        .surface = surface,
-        .minImageCount = image_count,
-        .imageFormat = surface_format,
-        .imageColorSpace = color_space,
-        .imageExtent = extent,
-        .imageArrayLayers = 1,
-        .imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
-        .imageSharingMode = VK_SHARING_MODE_EXCLUSIVE,
-        .preTransform = capabilities.currentTransform,
-        .compositeAlpha = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR,
-        .presentMode = present_mode,
-        .clipped = VK_TRUE,
-        .oldSwapchain = VK_NULL_HANDLE
-    };
-
-    VkSwapchainKHR swapchain;
-    if(vkCreateSwapchainKHR(logical_device, &create_info, nullptr, &swapchain) != VK_SUCCESS) {
-        throw std::runtime_error("failed to create swapchain");
-    }
-
-    std::vector<VkImage> swapchain_images;
-    vkGetSwapchainImagesKHR(logical_device, swapchain, &image_count, nullptr);
-    swapchain_images.resize(image_count);
-    vkGetSwapchainImagesKHR(logical_device, swapchain, &image_count, swapchain_images.data());
-
-    return Swapchain {
-        .swapchain = swapchain,
-        .images = swapchain_images,
-        .extent = extent,
-        .image_format = surface_format
+    return RenderQueue {
+        .graphics = graphics_queue,
+        .presentation = presentation_queue
     };
 }
 
@@ -312,6 +308,8 @@ std::vector<VkImageView> create_image_views(VkDevice device, const std::vector<V
 }
 
 VkShaderModule create_shader_module(VkDevice device, const std::vector<char>& code) {
+    assert(code.size() % 4 == 0);
+
     VkShaderModuleCreateInfo create_info{
         .sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO,
         .codeSize = code.size(),
@@ -326,7 +324,7 @@ VkShaderModule create_shader_module(VkDevice device, const std::vector<char>& co
     return shader_module;
 }
 
-std::pair<VkRenderPass, VkRenderPassCreateInfo> create_render_pass(VkDevice device, VkFormat format) {
+VkRenderPass create_render_pass(VkDevice device, VkFormat format) {
     VkAttachmentDescription color_attachment{
         .format = format,
         .samples = VK_SAMPLE_COUNT_1_BIT,
@@ -374,7 +372,7 @@ std::pair<VkRenderPass, VkRenderPassCreateInfo> create_render_pass(VkDevice devi
         throw std::runtime_error("failed to create render pass");
     }
 
-    return { render_pass, render_pass_info };
+    return render_pass;
 }
 
 std::pair<VkPipelineLayout, VkPipeline> create_graphics_pipeline(VkDevice device, VkExtent2D extent, VkRenderPass render_pass) {
@@ -534,34 +532,29 @@ std::pair<VkPipelineLayout, VkPipeline> create_graphics_pipeline(VkDevice device
     return { pipeline_layout, graphics_pipeline };
 }
 
-std::vector<VkFramebuffer> create_framebuffers(VkDevice device, const std::vector<VkImageView>& swapchain_image_views, VkExtent2D swapchain_extent, VkRenderPass render_pass) {
-    std::vector<VkFramebuffer> swapchain_framebuffers;
-    swapchain_framebuffers.resize(swapchain_image_views.size());
+void create_framebuffers(VkDevice device, Swapchain& swapchain, VkRenderPass render_pass) {
+    swapchain.framebuffers.resize(swapchain.image_views.size());
 
-    for(size_t i = 0; i < swapchain_image_views.size(); i++) {
-        VkImageView attachments[] = { swapchain_image_views[i] };
+    for(size_t i = 0; i < swapchain.image_views.size(); i++) {
+        VkImageView attachments[] = { swapchain.image_views[i] };
 
         VkFramebufferCreateInfo framebuffer_info {
             .sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO,
             .renderPass = render_pass,
             .attachmentCount = 1,
             .pAttachments = attachments,
-            .width = swapchain_extent.width,
-            .height = swapchain_extent.height,
+            .width = swapchain.extent.width,
+            .height = swapchain.extent.height,
             .layers = 1
         };
 
-        if(vkCreateFramebuffer(device, &framebuffer_info, nullptr, &swapchain_framebuffers[i]) != VK_SUCCESS) {
+        if(vkCreateFramebuffer(device, &framebuffer_info, nullptr, &swapchain.framebuffers[i]) != VK_SUCCESS) {
             throw std::runtime_error("failed to create framebuffer");
         }
     }
-
-    return swapchain_framebuffers;
 }
 
-VkCommandPool create_command_pool(VkPhysicalDevice physical_device, VkDevice device) {
-    uint32_t graphics_queue_family = find_graphics_queue_families(physical_device).first;
-
+VkCommandPool create_command_pool(VkDevice device, uint32_t graphics_queue_family) {
     VkCommandPoolCreateInfo pool_info {
         .sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO,
         .flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT,
@@ -670,14 +663,14 @@ std::pair<std::vector<VkSemaphore>, std::vector<VkFence>> create_sync_objects(Vk
 }
 
 void draw(VkContext context) {
-    vkWaitForFences(context.device, 1, &context.fences[0], VK_TRUE, UINT64_MAX);
-    vkResetFences(context.device, 1, &context.fences[0]);
+    vkWaitForFences(context.device.logical, 1, &context.fences[0], VK_TRUE, UINT64_MAX);
+    vkResetFences(context.device.logical, 1, &context.fences[0]);
 
     uint32_t image_index;
-    vkAcquireNextImageKHR(context.device, context.swapchain.swapchain, UINT64_MAX, context.semaphores[0], VK_NULL_HANDLE, &image_index);
+    vkAcquireNextImageKHR(context.device.logical, context.swapchain.handle, UINT64_MAX, context.semaphores[0], VK_NULL_HANDLE, &image_index);
 
     vkResetCommandBuffer(context.command_buffer, 0);
-    record_command_buffer(context.swapchain, context.command_buffer, context.render_pass, context.framebuffers[image_index], context.pipeline);
+    record_command_buffer(context.swapchain, context.command_buffer, context.render_pass, context.swapchain.framebuffers[image_index], context.pipeline);
 
     VkSemaphore wait_semaphores[] = { context.semaphores[0] };
     VkPipelineStageFlags wait_stages[] = { VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT };
@@ -694,13 +687,11 @@ void draw(VkContext context) {
         .pSignalSemaphores = signal_semaphores
     };
 
-    if(vkQueueSubmit(context.presentation_queue, 1, &submit_info, context.fences[0]) != VK_SUCCESS) {
+    if(vkQueueSubmit(context.queue.graphics, 1, &submit_info, context.fences[0]) != VK_SUCCESS) {
         throw std::runtime_error("failed to submit draw command buffer");
     }
 
-
-
-    VkSwapchainKHR swapchains[] = { context.swapchain.swapchain };
+    VkSwapchainKHR swapchains[] = { context.swapchain.handle };
 
     VkPresentInfoKHR present_info {
         .sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR,
@@ -712,140 +703,81 @@ void draw(VkContext context) {
         .pResults = nullptr
     };
 
-    vkQueuePresentKHR(context.presentation_queue, &present_info);
-}
-
-void destroy_command_pool(VkDevice device, VkCommandPool command_pool) {
-    vkDestroyCommandPool(device, command_pool, nullptr);
-}
-
-void destroy_device(VkDevice device) {
-    vkDestroyDevice(device, nullptr);
-}
-
-void destroy_fence(VkDevice device, VkFence fence) {
-    vkDestroyFence(device, fence, nullptr);
-}
-
-void destroy_framebuffer(VkDevice device, VkFramebuffer framebuffer) {
-    vkDestroyFramebuffer(device, framebuffer, nullptr);
-}
-
-void destroy_image(VkDevice device, VkImage image) {
-    vkDestroyImage(device, image, nullptr);
-}
-
-void destroy_image_view(VkDevice device, VkImageView image_view) {
-    vkDestroyImageView(device, image_view, nullptr);
-}
-
-void destroy_instance(VkInstance instance) {
-    vkDestroyInstance(instance, nullptr);
-}
-
-void destroy_pipeline(VkDevice device, VkPipeline pipeline) {
-    vkDestroyPipeline(device, pipeline, nullptr);
-}
-
-void destroy_pipeline_layout(VkDevice device, VkPipelineLayout layout) {
-    vkDestroyPipelineLayout(device, layout, nullptr);
-}
-
-void destroy_render_pass(VkDevice device, VkRenderPass render_pass) {
-    vkDestroyRenderPass(device, render_pass, nullptr);
-}
-
-void destroy_semaphore(VkDevice device, VkSemaphore semaphore) {
-    vkDestroySemaphore(device, semaphore, nullptr);
-}
-
-void destroy_surface(VkInstance instance, VkSurfaceKHR surface) {
-    vkDestroySurfaceKHR(instance, surface, nullptr);
-}
-
-void destroy_swapchain(VkDevice device, VkSwapchainKHR swapchain) {
-    vkDestroySwapchainKHR(device, swapchain, nullptr);
+    vkQueuePresentKHR(context.queue.presentation, &present_info);
 }
 
 void cleanup(VkContext context) {
-    vkDeviceWaitIdle(context.device);
+    vkDeviceWaitIdle(context.device.logical);
 
     for(auto& semaphore : context.semaphores) {
-        destroy_semaphore(context.device, semaphore);
+        vkDestroySemaphore(context.device.logical, semaphore, nullptr);
     }
 
     for(auto& fence : context.fences) {
-        destroy_fence(context.device, fence);
+        vkDestroyFence(context.device.logical, fence, nullptr);
     }
 
-    destroy_command_pool(context.device, context.command_pool);
+    vkDestroyCommandPool(context.device.logical, context.command_pool, nullptr);
 
-    for(auto& framebuffer : context.framebuffers) {
-        destroy_framebuffer(context.device, framebuffer);
+    for(auto& framebuffer : context.swapchain.framebuffers) {
+        vkDestroyFramebuffer(context.device.logical, framebuffer, nullptr);
     }
 
-    destroy_pipeline(context.device, context.pipeline);
-    destroy_pipeline_layout(context.device, context.pipeline_layout);
-    destroy_render_pass(context.device, context.render_pass);
+    vkDestroyPipeline(context.device.logical, context.pipeline, nullptr);
+    vkDestroyPipelineLayout(context.device.logical, context.pipeline_layout, nullptr);
+    vkDestroyRenderPass(context.device.logical, context.render_pass, nullptr);
 
     for(auto& image_view : context.swapchain.image_views) {
-        destroy_image_view(context.device, image_view);
+        vkDestroyImageView(context.device.logical, image_view, nullptr);
     }
 
-    for(auto& image : context.swapchain.images) {
-        //destroy_image(context.device, image);
-    }
-
-    destroy_swapchain(context.device, context.swapchain.swapchain);
-    destroy_surface(context.instance, context.surface);
-    destroy_device(context.device);
+    vkDestroySwapchainKHR(context.device.logical, context.swapchain.handle, nullptr);
+    vkDestroySurfaceKHR(context.instance, context.surface, nullptr);
+    vkDestroyDevice(context.device.logical, nullptr);
     destroy_debug_utils_messenger_ext(context.instance, context.debug_messenger);
-    destroy_instance(context.instance);
+    vkDestroyInstance(context.instance, nullptr);
 }
 
-std::expected<VkContext, std::string> init_renderer(PlatformWindow* window, HINSTANCE instance, std::vector<const char*>& validation_layers, std::vector<const char*>& instance_extensions, std::vector<const char*>& device_extensions) {
+std::expected<VkContext, std::string> init_renderer(PlatformWindow* window, HINSTANCE instance, const std::vector<const char*>& validation_layers, const std::vector<const char*>& instance_extensions, const std::vector<const char*>& device_extensions) {
     VkContext context;
 
-    // instance & physical device
+    if(!validation_layers_available(validation_layers)) {
+        return std::unexpected("validation layers are not available!");
+    }
+
+    if(!instance_extensions_supported(instance_extensions)) {
+        return std::unexpected("requested instance extensions are not available");
+    }
+
+    // instance, physical device
     context.instance = create_instance(validation_layers, instance_extensions);
     context.debug_messenger = setup_debug_messenger(context.instance);
-    context.physical_device = get_physical_device(context.instance);
-
-    // validation_layers
-    if(!enable_validation_layers(validation_layers)) {
-        return std::unexpected("validation layers requested, but not available!");
-    }
-
-    // extensions
-    auto supported_instance_extensions = get_supported_instance_extensions();
-    auto supported_device_extensions = get_supported_device_extensions(context.physical_device);
-    if(!validate_extensions(supported_instance_extensions, supported_device_extensions, instance_extensions, device_extensions)) {
-        return std::unexpected("requested extensions not available");
-    }
-
-    // swapchain
-    auto [graphics_queue_family, queue_create_infos] = find_graphics_queue_families(context.physical_device);
-    context.device = create_logical_device(context.physical_device, queue_create_infos, device_extensions);
     context.surface = create_window_surface(context.instance, window->hwnd, instance);
-    context.presentation_queue = create_presentation_queue(context.device, graphics_queue_family);
-    auto swapchain = create_swapchain(window->hwnd, context.physical_device, context.device, context.surface);
-    swapchain.image_views = create_image_views(context.device, swapchain.images, swapchain.image_format);
+    context.device.physical = get_physical_device(context.instance, context.surface, device_extensions);
+
+    auto queue_family = get_queue_family(context.device.physical, context.surface);
+    if(!queue_family.has_value()) {
+        return std::unexpected("queue_family not found");
+    }
+
+    // logical device & swapchain
+    context.device.logical = create_logical_device(context.device.physical, queue_family.value(), device_extensions);
+    context.queue = get_queues(context.device.logical, queue_family.value().graphics, queue_family.value().presentation);
+    auto swapchain = create_swapchain(window->hwnd, context.device, context.surface);
+    swapchain.image_views = create_image_views(context.device.logical, swapchain.images, swapchain.image_format);
     context.swapchain = swapchain;
 
-    // render pass
-    auto [render_pass, render_pass_create_info] = create_render_pass(context.device, swapchain.image_format);
-    context.render_pass = render_pass;
-
     // graphics pipeline
-    auto [pipeline_layout, graphics_pipeline] = create_graphics_pipeline(context.device, swapchain.extent, render_pass);
+    context.render_pass = create_render_pass(context.device.logical, swapchain.image_format);
+    auto [pipeline_layout, graphics_pipeline] = create_graphics_pipeline(context.device.logical, swapchain.extent, context.render_pass);
     context.pipeline_layout = pipeline_layout;
     context.pipeline = graphics_pipeline;
 
     // commands, semaphore/fences
-    context.framebuffers = create_framebuffers(context.device, swapchain.image_views, swapchain.extent, render_pass);
-    context.command_pool = create_command_pool(context.physical_device, context.device);
-    context.command_buffer = create_command_buffer(context.device, context.command_pool);
-    auto [semaphores, fences] = create_sync_objects(context.device);
+    create_framebuffers(context.device.logical, context.swapchain, context.render_pass);
+    context.command_pool = create_command_pool(context.device.logical, queue_family.value().graphics);
+    context.command_buffer = create_command_buffer(context.device.logical, context.command_pool);
+    auto [semaphores, fences] = create_sync_objects(context.device.logical);
     context.semaphores = semaphores;
     context.fences = fences;
 
