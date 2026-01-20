@@ -15,6 +15,7 @@ struct Swapchain {
     std::vector<VkImageView> image_views;
     VkExtent2D extent;
     VkFormat image_format;
+    VkPresentModeKHR present_mode;
     std::vector<VkFramebuffer> framebuffers;
 };
 

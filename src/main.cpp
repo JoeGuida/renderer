@@ -42,13 +42,14 @@ int WinMain(HINSTANCE instance, HINSTANCE unused, LPSTR command_line, int show_w
 
     auto vk_context = init_renderer(window.handle.get(), instance, validation_layers, instance_extensions, device_extensions);
     if(!vk_context.has_value()) {
+        spdlog::error("could not get vk_context!");
         return EXIT_FAILURE;
     }
 
     std::function<void()> draw_callback = [&]() { draw(vk_context.value()); };
 
     run_window(window.handle.get(), draw_callback);
-    cleanup(vk_context.value());
+    destroy_context(vk_context.value());
 
     return EXIT_SUCCESS;
 }

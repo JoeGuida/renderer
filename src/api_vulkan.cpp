@@ -8,66 +8,12 @@
 
 #include <spdlog/spdlog.h>
 
+#include "context.hpp"
 #include "debug_messenger.hpp"
 #include "device.hpp"
 #include "extension.hpp"
 #include "shader.hpp"
 #include "swapchain.hpp"
-
-std::optional<QueueFamily> get_queue_family(VkPhysicalDevice physical_device, VkSurfaceKHR surface) {
-    uint32_t queue_family_count = 0;
-    vkGetPhysicalDeviceQueueFamilyProperties(physical_device, &queue_family_count, nullptr);
-
-    std::vector<VkQueueFamilyProperties> queue_families(queue_family_count);
-    vkGetPhysicalDeviceQueueFamilyProperties(physical_device, &queue_family_count, queue_families.data());
-
-    std::optional<uint32_t> graphics;
-    std::optional<uint32_t> presentation;
-
-    for(uint32_t i = 0; i < queue_families.size(); i++) {
-        bool graphics_supported = queue_families[i].queueFlags & VK_QUEUE_GRAPHICS_BIT;
-        VkBool32 presentation_supported = VK_FALSE;
-        vkGetPhysicalDeviceSurfaceSupportKHR(physical_device, i, surface, &presentation_supported);
-
-        if(graphics_supported && presentation_supported) {
-            return QueueFamily {
-                .graphics = i,
-                .presentation = i
-            };
-        }
-
-        if(!graphics && graphics_supported) {
-            graphics = i;
-        }
-
-        if(!presentation && presentation_supported) {
-            presentation = i;
-        }
-    }
-
-    if(graphics.has_value() && presentation.has_value()) {
-        return QueueFamily {
-            .graphics = graphics.value(),
-            .presentation = presentation.value()
-        };
-    }
-
-    return std::nullopt;
-}
-
-int score_device(VkPhysicalDevice physical_device) {
-    VkPhysicalDeviceProperties properties;
-    vkGetPhysicalDeviceProperties(physical_device, &properties);
-
-    int score = 0;
-    if(properties.deviceType == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU) {
-        score += 1000;
-    }
-
-    score += properties.limits.maxImageDimension2D;
-
-    return score;
-}
 
 bool is_gpu_usable(VkPhysicalDevice physical_device, VkSurfaceKHR surface, const std::vector<const char*> required_extensions) {
     if(!get_queue_family(physical_device, surface).has_value()) {
@@ -305,23 +251,6 @@ std::vector<VkImageView> create_image_views(VkDevice device, const std::vector<V
     }
 
     return swapchain_image_views;
-}
-
-VkShaderModule create_shader_module(VkDevice device, const std::vector<char>& code) {
-    assert(code.size() % 4 == 0);
-
-    VkShaderModuleCreateInfo create_info{
-        .sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO,
-        .codeSize = code.size(),
-        .pCode = reinterpret_cast<const uint32_t*>(code.data())
-    };
-
-    VkShaderModule shader_module;
-    if(vkCreateShaderModule(device, &create_info, nullptr, &shader_module) != VK_SUCCESS) {
-        throw std::runtime_error("failed to create shader module");
-    }
-
-    return shader_module;
 }
 
 VkRenderPass create_render_pass(VkDevice device, VkFormat format) {
@@ -706,40 +635,8 @@ void draw(VkContext context) {
     vkQueuePresentKHR(context.queue.presentation, &present_info);
 }
 
-void cleanup(VkContext context) {
-    vkDeviceWaitIdle(context.device.logical);
-
-    for(auto& semaphore : context.semaphores) {
-        vkDestroySemaphore(context.device.logical, semaphore, nullptr);
-    }
-
-    for(auto& fence : context.fences) {
-        vkDestroyFence(context.device.logical, fence, nullptr);
-    }
-
-    vkDestroyCommandPool(context.device.logical, context.command_pool, nullptr);
-
-    for(auto& framebuffer : context.swapchain.framebuffers) {
-        vkDestroyFramebuffer(context.device.logical, framebuffer, nullptr);
-    }
-
-    vkDestroyPipeline(context.device.logical, context.pipeline, nullptr);
-    vkDestroyPipelineLayout(context.device.logical, context.pipeline_layout, nullptr);
-    vkDestroyRenderPass(context.device.logical, context.render_pass, nullptr);
-
-    for(auto& image_view : context.swapchain.image_views) {
-        vkDestroyImageView(context.device.logical, image_view, nullptr);
-    }
-
-    vkDestroySwapchainKHR(context.device.logical, context.swapchain.handle, nullptr);
-    vkDestroySurfaceKHR(context.instance, context.surface, nullptr);
-    vkDestroyDevice(context.device.logical, nullptr);
-    destroy_debug_utils_messenger_ext(context.instance, context.debug_messenger);
-    vkDestroyInstance(context.instance, nullptr);
-}
-
 std::expected<VkContext, std::string> init_renderer(PlatformWindow* window, HINSTANCE instance, const std::vector<const char*>& validation_layers, const std::vector<const char*>& instance_extensions, const std::vector<const char*>& device_extensions) {
-    VkContext context;
+    VkContext context = {};
 
     if(!validation_layers_available(validation_layers)) {
         return std::unexpected("validation layers are not available!");
@@ -764,6 +661,9 @@ std::expected<VkContext, std::string> init_renderer(PlatformWindow* window, HINS
     context.device.logical = create_logical_device(context.device.physical, queue_family.value(), device_extensions);
     context.queue = get_queues(context.device.logical, queue_family.value().graphics, queue_family.value().presentation);
     auto swapchain = create_swapchain(window->hwnd, context.device, context.surface);
+    SwapchainSupportInfo info = query_swapchain_support(context.device.physical, context.surface);
+    context.swapchain.image_format = choose_surface_format(info.formats, VK_FORMAT_R8G8B8A8_UNORM, VK_COLOR_SPACE_SRGB_NONLINEAR_KHR).format;
+    context.swapchain.present_mode = choose_present_mode(info.present_modes, VK_PRESENT_MODE_MAILBOX_KHR);
     swapchain.image_views = create_image_views(context.device.logical, swapchain.images, swapchain.image_format);
     context.swapchain = swapchain;
 

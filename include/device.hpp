@@ -8,4 +8,6 @@ struct VulkanDevice {
     VkDevice logical;
 };
 
+int score_device(VkPhysicalDevice physical_device);
+
 #endif
