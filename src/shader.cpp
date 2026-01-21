@@ -18,7 +18,7 @@ std::vector<char> read_file(const std::filesystem::path& filepath) {
     return buffer;
 }
 
-VkShaderModule create_shader_module(VkDevice device, const std::vector<char>& code) {
+void create_shader_module(VkDevice device, Shader& shader, const std::vector<char>& code) {
     assert(code.size() % 4 == 0);
 
     VkShaderModuleCreateInfo create_info{
@@ -27,10 +27,7 @@ VkShaderModule create_shader_module(VkDevice device, const std::vector<char>& co
         .pCode = reinterpret_cast<const uint32_t*>(code.data())
     };
 
-    VkShaderModule shader_module;
-    if(vkCreateShaderModule(device, &create_info, nullptr, &shader_module) != VK_SUCCESS) {
+    if(vkCreateShaderModule(device, &create_info, nullptr, &shader.module) != VK_SUCCESS) {
         throw std::runtime_error("failed to create shader module");
     }
-
-    return shader_module;
 }

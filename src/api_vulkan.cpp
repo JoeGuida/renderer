@@ -71,7 +71,7 @@ VkPhysicalDevice get_physical_device(VkInstance instance, VkSurfaceKHR surface, 
     return physical_device;
 }
 
-VkInstance create_instance(const std::vector<const char*> validation_layers, const std::vector<const char*> instance_extensions) {
+VkInstance create_instance(const RendererExtensions& extensions) {
     VkInstance instance;
 
     VkApplicationInfo application_info {
@@ -86,10 +86,10 @@ VkInstance create_instance(const std::vector<const char*> validation_layers, con
     VkInstanceCreateInfo create_info {
         .sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO,
         .pApplicationInfo = &application_info,
-        .enabledLayerCount = static_cast<uint32_t>(validation_layers.size()),
-        .ppEnabledLayerNames = validation_layers.data(),
-        .enabledExtensionCount = static_cast<uint32_t>(instance_extensions.size()),
-        .ppEnabledExtensionNames = instance_extensions.data()
+        .enabledLayerCount = static_cast<uint32_t>(extensions.validation.size()),
+        .ppEnabledLayerNames = extensions.validation.data(),
+        .enabledExtensionCount = static_cast<uint32_t>(extensions.instance.size()),
+        .ppEnabledExtensionNames = extensions.instance.data()
     };
 
     VkResult result = vkCreateInstance(&create_info, nullptr, &instance);
@@ -201,7 +201,7 @@ RenderQueue get_queues(VkDevice logical_device, uint32_t graphics_queuee_id, uin
 }
 
 void create_image_views(VkDevice device, Swapchain& swapchain) {
-    swapchain.image_views.reserve(swapchain.images.size());
+    swapchain.image_views.resize(swapchain.images.size());
 
     for(size_t i = 0; i < swapchain.images.size(); i++) {
         VkImageViewCreateInfo create_info{
@@ -282,23 +282,32 @@ VkRenderPass create_render_pass(VkDevice device, VkFormat format) {
 }
 
 std::pair<VkPipelineLayout, VkPipeline> create_graphics_pipeline(VkDevice device, VkExtent2D extent, VkRenderPass render_pass) {
-    auto vertex_shader_code = read_file(std::filesystem::current_path() / "shaders" / "vert.spv");
-    auto fragment_shader_code = read_file(std::filesystem::current_path() / "shaders" / "frag.spv");
+    Shader vertex {
+        .filepath = std::filesystem::current_path() / "shaders" / "vert.spv",
+        .stage = ShaderStage::Vertex,
+    };
 
-    VkShaderModule vertex_shader_module = create_shader_module(device, vertex_shader_code);
-    VkShaderModule fragment_shader_module = create_shader_module(device, fragment_shader_code);
+    Shader fragment {
+        .filepath = std::filesystem::current_path() / "shaders" / "frag.spv",
+        .stage = ShaderStage::Fragment,
+    };
+
+    auto vertex_code = read_file(vertex.filepath);
+    auto fragment_code = read_file(fragment.filepath);
+    create_shader_module(device, vertex, vertex_code);
+    create_shader_module(device, fragment, fragment_code);
 
     VkPipelineShaderStageCreateInfo vertex_shader_stage_info{
         .sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO,
-        .stage = VK_SHADER_STAGE_VERTEX_BIT,
-        .module = vertex_shader_module,
+        .stage = static_cast<VkShaderStageFlagBits>(vertex.stage),
+        .module = vertex.module,
         .pName = "main"
     };
 
     VkPipelineShaderStageCreateInfo fragment_shader_stage_info{
         .sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO,
-        .stage = VK_SHADER_STAGE_FRAGMENT_BIT,
-        .module = fragment_shader_module,
+        .stage = static_cast<VkShaderStageFlagBits>(fragment.stage),
+        .module = fragment.module,
         .pName = "main"
     };
 
@@ -432,8 +441,8 @@ std::pair<VkPipelineLayout, VkPipeline> create_graphics_pipeline(VkDevice device
         throw std::runtime_error("failed to create graphics pipeline");
     }
 
-    vkDestroyShaderModule(device, vertex_shader_module, nullptr);
-    vkDestroyShaderModule(device, fragment_shader_module, nullptr);
+    vkDestroyShaderModule(device, vertex.module, nullptr);
+    vkDestroyShaderModule(device, fragment.module, nullptr);
 
     return { pipeline_layout, graphics_pipeline };
 }
@@ -460,7 +469,7 @@ void create_framebuffers(VkDevice device, Swapchain& swapchain, VkRenderPass ren
     }
 }
 
-void record_command_buffer(Swapchain& swapchain, VkCommandBuffer command_buffer, VkRenderPass render_pass, VkFramebuffer framebuffer, VkPipeline graphics_pipeline) {
+void record_command_buffer(Swapchain& swapchain, uint32_t framebuffer_index, VkCommandBuffer command_buffer, VkRenderPass render_pass, VkPipeline graphics_pipeline) {
     VkCommandBufferBeginInfo begin_info {
         .sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO,
         .flags = 0,
@@ -475,7 +484,7 @@ void record_command_buffer(Swapchain& swapchain, VkCommandBuffer command_buffer,
     VkRenderPassBeginInfo render_pass_begin_info {
         .sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO,
         .renderPass = render_pass,
-        .framebuffer = framebuffer,
+        .framebuffer = swapchain.framebuffers[framebuffer_index],
         .renderArea = {
             .offset = { 0, 0 },
             .extent = swapchain.extent
@@ -545,7 +554,7 @@ void draw(VkContext context) {
     vkAcquireNextImageKHR(context.device.logical, context.swapchain.handle, UINT64_MAX, context.semaphores[0], VK_NULL_HANDLE, &image_index);
 
     vkResetCommandBuffer(context.command_buffer, 0);
-    record_command_buffer(context.swapchain, context.command_buffer, context.render_pass, context.swapchain.framebuffers[image_index], context.pipeline);
+    record_command_buffer(context.swapchain, image_index, context.command_buffer, context.render_pass, context.pipeline);
 
     VkSemaphore wait_semaphores[] = { context.semaphores[0] };
     VkPipelineStageFlags wait_stages[] = { VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT };
@@ -593,7 +602,7 @@ std::expected<VkContext, std::string> init_renderer(PlatformWindow* window, HINS
     }
 
     // instance, physical device
-    context.instance = create_instance(extensions.validation, extensions.instance);
+    context.instance = create_instance(extensions);
     context.debug_messenger = setup_debug_messenger(context.instance);
     context.surface = create_window_surface(context.instance, window->hwnd, instance);
     context.device.physical = get_physical_device(context.instance, context.surface, extensions.device);

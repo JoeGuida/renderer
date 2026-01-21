@@ -26,7 +26,7 @@ bool is_gpu_usable(VkPhysicalDevice physical_device, VkSurfaceKHR surface, const
 VkPhysicalDevice get_physical_device(VkInstance instance, VkSurfaceKHR surface, const std::vector<const char*>& device_extensions);
 VkSurfaceFormatKHR choose_surface_format(const std::vector<VkSurfaceFormatKHR>& available_formats, VkFormat format, VkColorSpaceKHR color_space);
 VkPresentModeKHR choose_present_mode(const std::vector<VkPresentModeKHR>& available_present_modes, VkPresentModeKHR mode);
-VkInstance create_instance(const std::vector<const char*> validation_layers, const std::vector<const char*> instance_extensions);
+VkInstance create_instance(const RendererExtensions& extensions);
 bool validation_layers_available(const std::vector<const char*>& validation_layers);
 VkDevice create_logical_device(VkPhysicalDevice device, QueueFamily queue_family, const std::vector<const char*>& device_extensions);
 VkSurfaceKHR create_window_surface(VkInstance vk_instance, HWND hwnd, HINSTANCE instance);
@@ -35,7 +35,7 @@ void create_image_views(VkDevice device, Swapchain& swapchain);
 VkRenderPass create_render_pass(VkDevice device, VkFormat format);
 std::pair<VkPipelineLayout, VkPipeline> create_graphics_pipeline(VkDevice device, VkExtent2D extent, VkRenderPass render_pass);
 void create_framebuffers(VkDevice device, Swapchain& swapchain, VkRenderPass render_pass);
-void record_command_buffer(Swapchain& swapchain, VkCommandBuffer command_buffer, VkRenderPass render_pass, VkFramebuffer framebuffer, VkPipeline graphics_pipeline);
+void record_command_buffer(Swapchain& swapchain, uint32_t framebuffer_index, VkCommandBuffer command_buffer, VkRenderPass render_pass, VkPipeline graphics_pipeline);
 std::pair<std::vector<VkSemaphore>, std::vector<VkFence>> create_sync_objects(VkDevice device);
 void draw(VkContext context);
 std::expected<VkContext, std::string> init_renderer(PlatformWindow* window, HINSTANCE instance, const RendererExtensions& extensions);
