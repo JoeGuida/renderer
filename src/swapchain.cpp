@@ -73,3 +73,23 @@ SwapchainSupportInfo query_swapchain_support(VkPhysicalDevice physical_device, V
 
     return swapchain_support_info;
 }
+
+VkSurfaceFormatKHR choose_surface_format(const std::vector<VkSurfaceFormatKHR>& available_formats, VkFormat format, VkColorSpaceKHR color_space) {
+    for(const auto& available_format : available_formats) {
+        if(available_format.format == format && available_format.colorSpace == color_space) {
+            return available_format;
+        }
+    }
+
+    return available_formats[0];
+}
+
+VkPresentModeKHR choose_present_mode(const std::vector<VkPresentModeKHR>& available_present_modes, VkPresentModeKHR mode) {
+    for(const auto& available_mode : available_present_modes) {
+        if(available_mode == mode) {
+            return mode;
+        }
+    }
+
+    return available_present_modes[0];
+}

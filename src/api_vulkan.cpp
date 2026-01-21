@@ -71,26 +71,6 @@ VkPhysicalDevice get_physical_device(VkInstance instance, VkSurfaceKHR surface, 
     return physical_device;
 }
 
-VkSurfaceFormatKHR choose_surface_format(const std::vector<VkSurfaceFormatKHR>& available_formats, VkFormat format, VkColorSpaceKHR color_space) {
-    for(const auto& available_format : available_formats) {
-        if(available_format.format == format && available_format.colorSpace == color_space) {
-            return available_format;
-        }
-    }
-
-    return available_formats[0];
-}
-
-VkPresentModeKHR choose_present_mode(const std::vector<VkPresentModeKHR>& available_present_modes, VkPresentModeKHR mode) {
-    for(const auto& available_mode : available_present_modes) {
-        if(available_mode == mode) {
-            return mode;
-        }
-    }
-
-    return available_present_modes[0];
-}
-
 VkInstance create_instance(const std::vector<const char*> validation_layers, const std::vector<const char*> instance_extensions) {
     VkInstance instance;
 
@@ -220,16 +200,15 @@ RenderQueue get_queues(VkDevice logical_device, uint32_t graphics_queuee_id, uin
     };
 }
 
-std::vector<VkImageView> create_image_views(VkDevice device, const std::vector<VkImage>& swapchain_images, VkFormat image_format) {
-    std::vector<VkImageView> swapchain_image_views;
-    swapchain_image_views.resize(swapchain_images.size());
+void create_image_views(VkDevice device, Swapchain& swapchain) {
+    swapchain.image_views.reserve(swapchain.images.size());
 
-    for(size_t i = 0; i < swapchain_images.size(); i++) {
+    for(size_t i = 0; i < swapchain.images.size(); i++) {
         VkImageViewCreateInfo create_info{
             .sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO,
-            .image = swapchain_images[i],
+            .image = swapchain.images[i],
             .viewType = VK_IMAGE_VIEW_TYPE_2D,
-            .format = image_format,
+            .format = swapchain.image_format,
             .components {
                 .r = VK_COMPONENT_SWIZZLE_IDENTITY,
                 .g = VK_COMPONENT_SWIZZLE_IDENTITY,
@@ -245,12 +224,10 @@ std::vector<VkImageView> create_image_views(VkDevice device, const std::vector<V
             }
         };
 
-        if(vkCreateImageView(device, &create_info, nullptr, &swapchain_image_views[i]) != VK_SUCCESS) {
+        if(vkCreateImageView(device, &create_info, nullptr, &swapchain.image_views[i]) != VK_SUCCESS) {
             throw std::runtime_error("failed to create image views");
         }
     }
-
-    return swapchain_image_views;
 }
 
 VkRenderPass create_render_pass(VkDevice device, VkFormat format) {
@@ -483,37 +460,6 @@ void create_framebuffers(VkDevice device, Swapchain& swapchain, VkRenderPass ren
     }
 }
 
-VkCommandPool create_command_pool(VkDevice device, uint32_t graphics_queue_family) {
-    VkCommandPoolCreateInfo pool_info {
-        .sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO,
-        .flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT,
-        .queueFamilyIndex = graphics_queue_family
-    };
-
-    VkCommandPool command_pool;
-    if(vkCreateCommandPool(device, &pool_info, nullptr, &command_pool) != VK_SUCCESS) {
-        throw std::runtime_error("failed to create command pool");
-    }
-
-    return command_pool;
-}
-
-VkCommandBuffer create_command_buffer(VkDevice device, VkCommandPool command_pool) {
-    VkCommandBufferAllocateInfo alloc_info {
-        .sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO,
-        .commandPool = command_pool,
-        .level = VK_COMMAND_BUFFER_LEVEL_PRIMARY,
-        .commandBufferCount = 1
-    };
-
-    VkCommandBuffer command_buffer;
-    if(vkAllocateCommandBuffers(device, &alloc_info, &command_buffer) != VK_SUCCESS) {
-        throw std::runtime_error("failed to allocate command buffers");
-    }
-
-    return command_buffer;
-}
-
 void record_command_buffer(Swapchain& swapchain, VkCommandBuffer command_buffer, VkRenderPass render_pass, VkFramebuffer framebuffer, VkPipeline graphics_pipeline) {
     VkCommandBufferBeginInfo begin_info {
         .sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO,
@@ -635,22 +581,22 @@ void draw(VkContext context) {
     vkQueuePresentKHR(context.queue.presentation, &present_info);
 }
 
-std::expected<VkContext, std::string> init_renderer(PlatformWindow* window, HINSTANCE instance, const std::vector<const char*>& validation_layers, const std::vector<const char*>& instance_extensions, const std::vector<const char*>& device_extensions) {
+std::expected<VkContext, std::string> init_renderer(PlatformWindow* window, HINSTANCE instance, const RendererExtensions& extensions) {
     VkContext context = {};
 
-    if(!validation_layers_available(validation_layers)) {
+    if(!validation_layers_available(extensions.validation)) {
         return std::unexpected("validation layers are not available!");
     }
 
-    if(!instance_extensions_supported(instance_extensions)) {
+    if(!instance_extensions_supported(extensions.instance)) {
         return std::unexpected("requested instance extensions are not available");
     }
 
     // instance, physical device
-    context.instance = create_instance(validation_layers, instance_extensions);
+    context.instance = create_instance(extensions.validation, extensions.instance);
     context.debug_messenger = setup_debug_messenger(context.instance);
     context.surface = create_window_surface(context.instance, window->hwnd, instance);
-    context.device.physical = get_physical_device(context.instance, context.surface, device_extensions);
+    context.device.physical = get_physical_device(context.instance, context.surface, extensions.device);
 
     auto queue_family = get_queue_family(context.device.physical, context.surface);
     if(!queue_family.has_value()) {
@@ -658,13 +604,13 @@ std::expected<VkContext, std::string> init_renderer(PlatformWindow* window, HINS
     }
 
     // logical device & swapchain
-    context.device.logical = create_logical_device(context.device.physical, queue_family.value(), device_extensions);
+    context.device.logical = create_logical_device(context.device.physical, queue_family.value(), extensions.device);
     context.queue = get_queues(context.device.logical, queue_family.value().graphics, queue_family.value().presentation);
     auto swapchain = create_swapchain(window->hwnd, context.device, context.surface);
     SwapchainSupportInfo info = query_swapchain_support(context.device.physical, context.surface);
     context.swapchain.image_format = choose_surface_format(info.formats, VK_FORMAT_R8G8B8A8_UNORM, VK_COLOR_SPACE_SRGB_NONLINEAR_KHR).format;
     context.swapchain.present_mode = choose_present_mode(info.present_modes, VK_PRESENT_MODE_MAILBOX_KHR);
-    swapchain.image_views = create_image_views(context.device.logical, swapchain.images, swapchain.image_format);
+    create_image_views(context.device.logical, swapchain);
     context.swapchain = swapchain;
 
     // graphics pipeline

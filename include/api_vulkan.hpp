@@ -15,8 +15,10 @@
 
 #include <vulkan/vulkan.hpp>
 
+#include "command.hpp"
 #include "context.hpp"
 #include "device.hpp"
+#include "extension.hpp"
 #include "queue.hpp"
 #include "swapchain.hpp"
 
@@ -29,15 +31,13 @@ bool validation_layers_available(const std::vector<const char*>& validation_laye
 VkDevice create_logical_device(VkPhysicalDevice device, QueueFamily queue_family, const std::vector<const char*>& device_extensions);
 VkSurfaceKHR create_window_surface(VkInstance vk_instance, HWND hwnd, HINSTANCE instance);
 RenderQueue get_queues(VkDevice logical_device, uint32_t graphics_queuee_id, uint32_t presentation_queue_id);
-std::vector<VkImageView> create_image_views(VkDevice device, const std::vector<VkImage>& swapchain_images, VkFormat image_format);
+void create_image_views(VkDevice device, Swapchain& swapchain);
 VkRenderPass create_render_pass(VkDevice device, VkFormat format);
 std::pair<VkPipelineLayout, VkPipeline> create_graphics_pipeline(VkDevice device, VkExtent2D extent, VkRenderPass render_pass);
 void create_framebuffers(VkDevice device, Swapchain& swapchain, VkRenderPass render_pass);
-VkCommandPool create_command_pool(VkDevice device, uint32_t graphics_queue_family);
-VkCommandBuffer create_command_buffer(VkDevice device, VkCommandPool command_pool);
 void record_command_buffer(Swapchain& swapchain, VkCommandBuffer command_buffer, VkRenderPass render_pass, VkFramebuffer framebuffer, VkPipeline graphics_pipeline);
 std::pair<std::vector<VkSemaphore>, std::vector<VkFence>> create_sync_objects(VkDevice device);
 void draw(VkContext context);
-std::expected<VkContext, std::string> init_renderer(PlatformWindow* window, HINSTANCE instance, const std::vector<const char*>& validation_layers, const std::vector<const char*>& instance_extensions, const std::vector<const char*>& device_extensions);
+std::expected<VkContext, std::string> init_renderer(PlatformWindow* window, HINSTANCE instance, const RendererExtensions& extensions);
 
 #endif

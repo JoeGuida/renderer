@@ -7,6 +7,12 @@
 
 #include <vulkan/vulkan.hpp>
 
+struct RendererExtensions {
+    std::vector<const char*> instance;
+    std::vector<const char*> device;
+    std::vector<const char*> validation;
+};
+
 std::unordered_set<std::string> get_supported_instance_extensions();
 std::unordered_set<std::string> get_supported_device_extensions(VkPhysicalDevice physical_device);
 bool instance_extensions_supported(const std::vector<const char*>& extensions);

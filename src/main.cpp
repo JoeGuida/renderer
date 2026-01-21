@@ -5,6 +5,7 @@
 #include <window/window.hpp>
 
 #include "api_vulkan.hpp"
+#include "extension.hpp"
 #include "logger.hpp"
 
 constexpr int SCREEN_WIDTH = 1280;
@@ -26,21 +27,17 @@ int WinMain(HINSTANCE instance, HINSTANCE unused, LPSTR command_line, int show_w
         .handle = std::move(window_handle.value())
     };
 
-    std::vector<const char*> validation_layers {
-        "VK_LAYER_KHRONOS_validation"
+    RendererExtensions extensions = {
+        .instance = {
+            "VK_EXT_debug_utils",
+            "VK_KHR_surface",
+            "VK_KHR_win32_surface" 
+        },
+        .device = { "VK_KHR_swapchain" },
+        .validation = { "VK_LAYER_KHRONOS_validation" }
     };
 
-    std::vector<const char*> instance_extensions {
-        "VK_EXT_debug_utils",
-        "VK_KHR_surface",
-        "VK_KHR_win32_surface"
-    };
-
-    std::vector<const char*> device_extensions {
-        "VK_KHR_swapchain"
-    };
-
-    auto vk_context = init_renderer(window.handle.get(), instance, validation_layers, instance_extensions, device_extensions);
+    auto vk_context = init_renderer(window.handle.get(), instance, extensions);
     if(!vk_context.has_value()) {
         spdlog::error("could not get vk_context!");
         return EXIT_FAILURE;
