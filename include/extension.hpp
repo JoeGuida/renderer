@@ -17,5 +17,6 @@ std::unordered_set<std::string> get_supported_instance_extensions();
 std::unordered_set<std::string> get_supported_device_extensions(VkPhysicalDevice physical_device);
 bool instance_extensions_supported(const std::vector<const char*>& extensions);
 bool device_extensions_supported(VkPhysicalDevice physical_device, const std::vector<const char*> extensions);
+bool validation_layers_available(const std::vector<const char*>& validation_layers);
 
 #endif

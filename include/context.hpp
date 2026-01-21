@@ -8,6 +8,7 @@
 #include "device.hpp"
 #include "queue.hpp"
 #include "swapchain.hpp"
+#include "sync.hpp"
 
 struct VkContext {
     VkInstance instance;
@@ -22,9 +23,7 @@ struct VkContext {
     VkPipelineLayout pipeline_layout;
     VkCommandPool command_pool;
     VkCommandBuffer command_buffer;
-
-    std::vector<VkSemaphore> semaphores;
-    std::vector<VkFence> fences;
+    Sync sync;
 };
 
 void destroy_context(VkContext context);

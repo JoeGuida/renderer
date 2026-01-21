@@ -100,31 +100,6 @@ VkInstance create_instance(const RendererExtensions& extensions) {
     return instance;
 }
 
-bool validation_layers_available(const std::vector<const char*>& validation_layers) {
-    uint32_t layer_count;
-    vkEnumerateInstanceLayerProperties(&layer_count, nullptr);
-
-    std::vector<VkLayerProperties> available_layers(layer_count);
-    vkEnumerateInstanceLayerProperties(&layer_count, available_layers.data());
-
-    for(const auto& layer : validation_layers) {
-        bool layer_found = false;
-
-        for(const auto& layer_properties : available_layers) {
-            if(strcmp(layer, layer_properties.layerName) == 0) {
-                layer_found = true;
-                break;
-            }
-        }
-
-        if(!layer_found) {
-            return false;
-        }
-    }
-
-    return true;
-}
-
 VkDevice create_logical_device(VkPhysicalDevice device, QueueFamily queue_family, const std::vector<const char*>& device_extensions) {
     float queue_priority = 1.0f;
 
@@ -522,10 +497,10 @@ void record_command_buffer(Swapchain& swapchain, uint32_t framebuffer_index, VkC
     }
 };
 
-std::pair<std::vector<VkSemaphore>, std::vector<VkFence>> create_sync_objects(VkDevice device) {
-    VkSemaphore image_available_semaphore;
-    VkSemaphore render_finished_semaphore;
-    VkFence in_flight_fence;
+Sync create_sync_objects(VkDevice device) {
+    VkSemaphore semaphore0;
+    VkSemaphore semaphore1;
+    VkFence fence;
 
     VkSemaphoreCreateInfo semaphore_info {
         .sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO
@@ -536,29 +511,32 @@ std::pair<std::vector<VkSemaphore>, std::vector<VkFence>> create_sync_objects(Vk
         .flags = VK_FENCE_CREATE_SIGNALED_BIT
     };
 
-    if(vkCreateSemaphore(device, &semaphore_info, nullptr, &image_available_semaphore) != VK_SUCCESS ||
-       vkCreateSemaphore(device, &semaphore_info, nullptr, &render_finished_semaphore) != VK_SUCCESS ||
-       vkCreateFence(device, &fence_info, nullptr, &in_flight_fence) != VK_SUCCESS)
+    if(vkCreateSemaphore(device, &semaphore_info, nullptr, &semaphore0) != VK_SUCCESS ||
+       vkCreateSemaphore(device, &semaphore_info, nullptr, &semaphore1) != VK_SUCCESS ||
+       vkCreateFence(device, &fence_info, nullptr, &fence) != VK_SUCCESS)
     {
         throw std::runtime_error("failed to create semaphores");
     }
 
-    return { { image_available_semaphore, render_finished_semaphore }, { in_flight_fence } };
+    return Sync {
+        .semaphores = { semaphore0, semaphore1 },
+        .fences = { fence }
+    };
 }
 
 void draw(VkContext context) {
-    vkWaitForFences(context.device.logical, 1, &context.fences[0], VK_TRUE, UINT64_MAX);
-    vkResetFences(context.device.logical, 1, &context.fences[0]);
+    vkWaitForFences(context.device.logical, 1, &context.sync.fences[0], VK_TRUE, UINT64_MAX);
+    vkResetFences(context.device.logical, 1, &context.sync.fences[0]);
 
     uint32_t image_index;
-    vkAcquireNextImageKHR(context.device.logical, context.swapchain.handle, UINT64_MAX, context.semaphores[0], VK_NULL_HANDLE, &image_index);
+    vkAcquireNextImageKHR(context.device.logical, context.swapchain.handle, UINT64_MAX, context.sync.semaphores[0], VK_NULL_HANDLE, &image_index);
 
     vkResetCommandBuffer(context.command_buffer, 0);
     record_command_buffer(context.swapchain, image_index, context.command_buffer, context.render_pass, context.pipeline);
 
-    VkSemaphore wait_semaphores[] = { context.semaphores[0] };
+    VkSemaphore wait_semaphores[] = { context.sync.semaphores[0] };
     VkPipelineStageFlags wait_stages[] = { VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT };
-    VkSemaphore signal_semaphores[] = { context.semaphores[1] };
+    VkSemaphore signal_semaphores[] = { context.sync.semaphores[1] };
 
     VkSubmitInfo submit_info {
         .sType = VK_STRUCTURE_TYPE_SUBMIT_INFO,
@@ -571,7 +549,7 @@ void draw(VkContext context) {
         .pSignalSemaphores = signal_semaphores
     };
 
-    if(vkQueueSubmit(context.queue.graphics, 1, &submit_info, context.fences[0]) != VK_SUCCESS) {
+    if(vkQueueSubmit(context.queue.graphics, 1, &submit_info, context.sync.fences[0]) != VK_SUCCESS) {
         throw std::runtime_error("failed to submit draw command buffer");
     }
 
@@ -632,9 +610,7 @@ std::expected<VkContext, std::string> init_renderer(PlatformWindow* window, HINS
     create_framebuffers(context.device.logical, context.swapchain, context.render_pass);
     context.command_pool = create_command_pool(context.device.logical, queue_family.value().graphics);
     context.command_buffer = create_command_buffer(context.device.logical, context.command_pool);
-    auto [semaphores, fences] = create_sync_objects(context.device.logical);
-    context.semaphores = semaphores;
-    context.fences = fences;
+    context.sync = create_sync_objects(context.device.logical);
 
     return context;
 }

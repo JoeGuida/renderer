@@ -5,11 +5,11 @@
 void destroy_context(VkContext context) {
     vkDeviceWaitIdle(context.device.logical);
 
-    for(auto& semaphore : context.semaphores) {
+    for(auto& semaphore : context.sync.semaphores) {
         vkDestroySemaphore(context.device.logical, semaphore, nullptr);
     }
 
-    for(auto& fence : context.fences) {
+    for(auto& fence : context.sync.fences) {
         vkDestroyFence(context.device.logical, fence, nullptr);
     }
 

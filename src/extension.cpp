@@ -51,3 +51,28 @@ bool device_extensions_supported(VkPhysicalDevice physical_device, const std::ve
 
     return true;
 }
+
+bool validation_layers_available(const std::vector<const char*>& validation_layers) {
+    uint32_t layer_count;
+    vkEnumerateInstanceLayerProperties(&layer_count, nullptr);
+
+    std::vector<VkLayerProperties> available_layers(layer_count);
+    vkEnumerateInstanceLayerProperties(&layer_count, available_layers.data());
+
+    for(const auto& layer : validation_layers) {
+        bool layer_found = false;
+
+        for(const auto& layer_properties : available_layers) {
+            if(strcmp(layer, layer_properties.layerName) == 0) {
+                layer_found = true;
+                break;
+            }
+        }
+
+        if(!layer_found) {
+            return false;
+        }
+    }
+
+    return true;
+}
