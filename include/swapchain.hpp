@@ -29,5 +29,6 @@ Swapchain create_swapchain(HWND hwnd, VulkanDevice device, VkSurfaceKHR surface)
 SwapchainSupportInfo query_swapchain_support(VkPhysicalDevice physical_device, VkSurfaceKHR surface);
 VkSurfaceFormatKHR choose_surface_format(const std::vector<VkSurfaceFormatKHR>& available_formats, VkFormat format, VkColorSpaceKHR color_space);
 VkPresentModeKHR choose_present_mode(const std::vector<VkPresentModeKHR>& available_present_modes, VkPresentModeKHR mode);
+void create_framebuffers(VkDevice device, Swapchain& swapchain, VkRenderPass render_pass);
 
 #endif

@@ -422,28 +422,6 @@ std::pair<VkPipelineLayout, VkPipeline> create_graphics_pipeline(VkDevice device
     return { pipeline_layout, graphics_pipeline };
 }
 
-void create_framebuffers(VkDevice device, Swapchain& swapchain, VkRenderPass render_pass) {
-    swapchain.framebuffers.resize(swapchain.image_views.size());
-
-    for(size_t i = 0; i < swapchain.image_views.size(); i++) {
-        VkImageView attachments[] = { swapchain.image_views[i] };
-
-        VkFramebufferCreateInfo framebuffer_info {
-            .sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO,
-            .renderPass = render_pass,
-            .attachmentCount = 1,
-            .pAttachments = attachments,
-            .width = swapchain.extent.width,
-            .height = swapchain.extent.height,
-            .layers = 1
-        };
-
-        if(vkCreateFramebuffer(device, &framebuffer_info, nullptr, &swapchain.framebuffers[i]) != VK_SUCCESS) {
-            throw std::runtime_error("failed to create framebuffer");
-        }
-    }
-}
-
 void record_command_buffer(Swapchain& swapchain, uint32_t framebuffer_index, VkCommandBuffer command_buffer, VkRenderPass render_pass, VkPipeline graphics_pipeline) {
     VkCommandBufferBeginInfo begin_info {
         .sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO,
@@ -598,9 +576,9 @@ std::expected<VkContext, std::string> init_renderer(PlatformWindow* window, HINS
     context.swapchain.image_format = choose_surface_format(info.formats, VK_FORMAT_R8G8B8A8_UNORM, VK_COLOR_SPACE_SRGB_NONLINEAR_KHR).format;
     context.swapchain.present_mode = choose_present_mode(info.present_modes, VK_PRESENT_MODE_MAILBOX_KHR);
     create_image_views(context.device.logical, swapchain);
+
     context.swapchain = swapchain;
 
-    // graphics pipeline
     context.render_pass = create_render_pass(context.device.logical, swapchain.image_format);
     auto [pipeline_layout, graphics_pipeline] = create_graphics_pipeline(context.device.logical, swapchain.extent, context.render_pass);
     context.pipeline_layout = pipeline_layout;
@@ -608,6 +586,7 @@ std::expected<VkContext, std::string> init_renderer(PlatformWindow* window, HINS
 
     // commands, semaphore/fences
     create_framebuffers(context.device.logical, context.swapchain, context.render_pass);
+    
     context.command_pool = create_command_pool(context.device.logical, queue_family.value().graphics);
     context.command_buffer = create_command_buffer(context.device.logical, context.command_pool);
     context.sync = create_sync_objects(context.device.logical);

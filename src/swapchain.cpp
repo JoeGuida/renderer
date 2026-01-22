@@ -93,3 +93,25 @@ VkPresentModeKHR choose_present_mode(const std::vector<VkPresentModeKHR>& availa
 
     return available_present_modes[0];
 }
+
+void create_framebuffers(VkDevice device, Swapchain& swapchain, VkRenderPass render_pass) {
+    swapchain.framebuffers.resize(swapchain.image_views.size());
+
+    for(size_t i = 0; i < swapchain.image_views.size(); i++) {
+        VkImageView attachments[] = { swapchain.image_views[i] };
+
+        VkFramebufferCreateInfo framebuffer_info {
+            .sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO,
+            .renderPass = render_pass,
+            .attachmentCount = 1,
+            .pAttachments = attachments,
+            .width = swapchain.extent.width,
+            .height = swapchain.extent.height,
+            .layers = 1
+        };
+
+        if(vkCreateFramebuffer(device, &framebuffer_info, nullptr, &swapchain.framebuffers[i]) != VK_SUCCESS) {
+            throw std::runtime_error("failed to create framebuffer");
+        }
+    }
+}
