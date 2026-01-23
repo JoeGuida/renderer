@@ -30,9 +30,9 @@ std::unordered_set<std::string> get_supported_device_extensions(VkPhysicalDevice
     return supported_extensions;
 }
 
-bool instance_extensions_supported(const std::vector<const char*>& extensions) {
+bool instance_extensions_supported(const RendererExtensions& extensions) {
     auto supported = get_supported_instance_extensions();
-    for(const auto& extension : extensions) {
+    for(const auto& extension : extensions.instance) {
         if(!supported.contains(extension)) {
             return false;
         }
@@ -41,9 +41,9 @@ bool instance_extensions_supported(const std::vector<const char*>& extensions) {
     return true;
 }
 
-bool device_extensions_supported(VkPhysicalDevice physical_device, const std::vector<const char*> extensions) {
+bool device_extensions_supported(VkPhysicalDevice physical_device, const RendererExtensions& extensions) {
     auto supported = get_supported_device_extensions(physical_device);
-    for(const auto& extension : extensions) {
+    for(const auto& extension : extensions.device) {
         if(!supported.contains(extension)) {
             return false;
         }
@@ -52,14 +52,14 @@ bool device_extensions_supported(VkPhysicalDevice physical_device, const std::ve
     return true;
 }
 
-bool validation_layers_available(const std::vector<const char*>& validation_layers) {
+bool validation_layers_available(const RendererExtensions& extensions) {
     uint32_t layer_count;
     vkEnumerateInstanceLayerProperties(&layer_count, nullptr);
 
     std::vector<VkLayerProperties> available_layers(layer_count);
     vkEnumerateInstanceLayerProperties(&layer_count, available_layers.data());
 
-    for(const auto& layer : validation_layers) {
+    for(const auto& layer : extensions.validation) {
         bool layer_found = false;
 
         for(const auto& layer_properties : available_layers) {

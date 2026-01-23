@@ -20,7 +20,6 @@ struct VkContext {
     Swapchain swapchain;
     VkRenderPass render_pass;
     VkPipeline pipeline;
-    VkPipelineLayout pipeline_layout;
     VkCommandPool command_pool;
     VkCommandBuffer command_buffer;
     Sync sync;

@@ -15,35 +15,35 @@
 #include "shader.hpp"
 #include "swapchain.hpp"
 
-bool is_gpu_usable(VkPhysicalDevice physical_device, VkSurfaceKHR surface, const std::vector<const char*> required_extensions) {
-    if(!get_queue_family(physical_device, surface).has_value()) {
+bool is_gpu_usable(VkContext context, const RendererExtensions& extensions) {
+    if(!get_queue_family(context.device.physical, context.surface).has_value()) {
         return false;
     };
 
-    if(!device_extensions_supported(physical_device, required_extensions)) {
+    if(!device_extensions_supported(context.device.physical, extensions)) {
         return false;
     }
 
-    SwapchainSupportInfo swapchain_support = query_swapchain_support(physical_device, surface);
+    SwapchainSupportInfo swapchain_support = query_swapchain_support(context.device.physical, context.surface);
     return !swapchain_support.formats.empty() && !swapchain_support.present_modes.empty();
 }
 
-VkPhysicalDevice get_physical_device(VkInstance instance, VkSurfaceKHR surface, const std::vector<const char*>& device_extensions) {
+VkPhysicalDevice get_physical_device(VkContext context, const RendererExtensions& extensions) {
     VkPhysicalDevice physical_device = VK_NULL_HANDLE;
 
     uint32_t device_count = 0;
-    vkEnumeratePhysicalDevices(instance, &device_count, nullptr);
+    vkEnumeratePhysicalDevices(context.instance, &device_count, nullptr);
 
     if(device_count == 0) {
         throw std::runtime_error("no physical devices found");
     }
 
     std::vector<VkPhysicalDevice> devices(device_count);
-    vkEnumeratePhysicalDevices(instance, &device_count, devices.data());
+    vkEnumeratePhysicalDevices(context.instance, &device_count, devices.data());
 
     std::vector<int> scores;
     for(const auto& device : devices) {
-        if(is_gpu_usable(device, surface, device_extensions)) {
+        if(is_gpu_usable(context, extensions)) {
             scores.push_back(score_device(device));
         }
         else {
@@ -256,7 +256,7 @@ VkRenderPass create_render_pass(VkDevice device, VkFormat format) {
     return render_pass;
 }
 
-std::pair<VkPipelineLayout, VkPipeline> create_graphics_pipeline(VkDevice device, VkExtent2D extent, VkRenderPass render_pass) {
+VkPipeline create_graphics_pipeline(VkDevice device, VkExtent2D extent, VkRenderPass render_pass) {
     Shader vertex {
         .filepath = std::filesystem::current_path() / "shaders" / "vert.spv",
         .stage = ShaderStage::Vertex,
@@ -418,8 +418,9 @@ std::pair<VkPipelineLayout, VkPipeline> create_graphics_pipeline(VkDevice device
 
     vkDestroyShaderModule(device, vertex.module, nullptr);
     vkDestroyShaderModule(device, fragment.module, nullptr);
+    vkDestroyPipelineLayout(device, pipeline_layout, nullptr);
 
-    return { pipeline_layout, graphics_pipeline };
+    return graphics_pipeline;
 }
 
 void record_command_buffer(Swapchain& swapchain, uint32_t framebuffer_index, VkCommandBuffer command_buffer, VkRenderPass render_pass, VkPipeline graphics_pipeline) {
@@ -549,11 +550,11 @@ void draw(VkContext context) {
 std::expected<VkContext, std::string> init_renderer(PlatformWindow* window, HINSTANCE instance, const RendererExtensions& extensions) {
     VkContext context = {};
 
-    if(!validation_layers_available(extensions.validation)) {
+    if(!validation_layers_available(extensions)) {
         return std::unexpected("validation layers are not available!");
     }
 
-    if(!instance_extensions_supported(extensions.instance)) {
+    if(!instance_extensions_supported(extensions)) {
         return std::unexpected("requested instance extensions are not available");
     }
 
@@ -561,7 +562,7 @@ std::expected<VkContext, std::string> init_renderer(PlatformWindow* window, HINS
     context.instance = create_instance(extensions);
     context.debug_messenger = setup_debug_messenger(context.instance);
     context.surface = create_window_surface(context.instance, window->hwnd, instance);
-    context.device.physical = get_physical_device(context.instance, context.surface, extensions.device);
+    context.device.physical = get_physical_device(context, extensions);
 
     auto queue_family = get_queue_family(context.device.physical, context.surface);
     if(!queue_family.has_value()) {
@@ -580,9 +581,7 @@ std::expected<VkContext, std::string> init_renderer(PlatformWindow* window, HINS
     context.swapchain = swapchain;
 
     context.render_pass = create_render_pass(context.device.logical, swapchain.image_format);
-    auto [pipeline_layout, graphics_pipeline] = create_graphics_pipeline(context.device.logical, swapchain.extent, context.render_pass);
-    context.pipeline_layout = pipeline_layout;
-    context.pipeline = graphics_pipeline;
+    context.pipeline = create_graphics_pipeline(context.device.logical, swapchain.extent, context.render_pass);
 
     // commands, semaphore/fences
     create_framebuffers(context.device.logical, context.swapchain, context.render_pass);
