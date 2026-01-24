@@ -23,7 +23,7 @@
 #include "swapchain.hpp"
 #include "sync.hpp"
 
-bool is_gpu_usable(VkContext context, const RendererExtensions& extensions);
+bool is_gpu_usable(VkPhysicalDevice device, VkSurfaceKHR surface, const RendererExtensions& extensions);
 VkPhysicalDevice get_physical_device(VkContext context, const RendererExtensions& extensions);
 VkSurfaceFormatKHR choose_surface_format(const std::vector<VkSurfaceFormatKHR>& available_formats, VkFormat format, VkColorSpaceKHR color_space);
 VkPresentModeKHR choose_present_mode(const std::vector<VkPresentModeKHR>& available_present_modes, VkPresentModeKHR mode);

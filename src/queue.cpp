@@ -1,5 +1,7 @@
 #include "queue.hpp"
 
+#include <spdlog/spdlog.h>
+
 std::optional<QueueFamily> get_queue_family(VkPhysicalDevice physical_device, VkSurfaceKHR surface) {
     uint32_t queue_family_count = 0;
     vkGetPhysicalDeviceQueueFamilyProperties(physical_device, &queue_family_count, nullptr);
@@ -12,6 +14,7 @@ std::optional<QueueFamily> get_queue_family(VkPhysicalDevice physical_device, Vk
 
     for(uint32_t i = 0; i < queue_families.size(); i++) {
         bool graphics_supported = queue_families[i].queueFlags & VK_QUEUE_GRAPHICS_BIT;
+
         VkBool32 presentation_supported = VK_FALSE;
         vkGetPhysicalDeviceSurfaceSupportKHR(physical_device, i, surface, &presentation_supported);
 

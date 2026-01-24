@@ -15,16 +15,17 @@
 #include "shader.hpp"
 #include "swapchain.hpp"
 
-bool is_gpu_usable(VkContext context, const RendererExtensions& extensions) {
-    if(!get_queue_family(context.device.physical, context.surface).has_value()) {
+bool is_gpu_usable(VkPhysicalDevice device, VkSurfaceKHR surface, const RendererExtensions& extensions) {
+    if(!get_queue_family(device, surface).has_value()) {
         return false;
     };
 
-    if(!device_extensions_supported(context.device.physical, extensions)) {
+    if(!device_extensions_supported(device, extensions)) {
         return false;
     }
 
-    SwapchainSupportInfo swapchain_support = query_swapchain_support(context.device.physical, context.surface);
+    SwapchainSupportInfo swapchain_support = query_swapchain_support(device, surface);
+
     return !swapchain_support.formats.empty() && !swapchain_support.present_modes.empty();
 }
 
@@ -43,7 +44,7 @@ VkPhysicalDevice get_physical_device(VkContext context, const RendererExtensions
 
     std::vector<int> scores;
     for(const auto& device : devices) {
-        if(is_gpu_usable(context, extensions)) {
+        if(is_gpu_usable(device, context.surface, extensions)) {
             scores.push_back(score_device(device));
         }
         else {
