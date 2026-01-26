@@ -26,6 +26,7 @@ target_compile_options(renderer PRIVATE
 
 target_include_directories(renderer PRIVATE
     include
+    include/samples
     ${CMAKE_SOURCE_DIR}/lib/vulkan/include
 )
 

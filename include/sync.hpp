@@ -10,4 +10,6 @@ struct Sync {
     std::vector<VkFence> fences;
 };
 
+Sync create_sync_objects(VkDevice device);
+
 #endif

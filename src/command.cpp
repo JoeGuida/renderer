@@ -32,3 +32,56 @@ VkCommandBuffer create_command_buffer(VkDevice device, VkCommandPool command_poo
 
     return command_buffer;
 }
+
+void record_command_buffer(Swapchain& swapchain, uint32_t framebuffer_index, VkCommandBuffer command_buffer, VkRenderPass render_pass, VkPipeline graphics_pipeline) {
+    VkCommandBufferBeginInfo begin_info {
+        .sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO,
+        .flags = 0,
+        .pInheritanceInfo = nullptr
+    };
+
+    if(vkBeginCommandBuffer(command_buffer, &begin_info) != VK_SUCCESS) {
+        throw std::runtime_error("failed to begin recording command buffer");
+    }
+
+    VkClearValue clear_color = {{{ 0.0f, 0.0f, 0.0f, 1.0f }}};
+    VkRenderPassBeginInfo render_pass_begin_info {
+        .sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO,
+        .renderPass = render_pass,
+        .framebuffer = swapchain.framebuffers[framebuffer_index],
+        .renderArea = {
+            .offset = { 0, 0 },
+            .extent = swapchain.extent
+        },
+        .clearValueCount = 1,
+        .pClearValues = &clear_color
+    };
+
+    vkCmdBeginRenderPass(command_buffer, &render_pass_begin_info, VK_SUBPASS_CONTENTS_INLINE);
+
+    vkCmdBindPipeline(command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, graphics_pipeline);
+
+    VkViewport viewport {
+        .x = 0.0f,
+        .y = 0.0f,
+        .width = static_cast<float>(swapchain.extent.width),
+        .height = static_cast<float>(swapchain.extent.height),
+        .minDepth = 0.0f,
+        .maxDepth = 1.0f,
+    };
+
+    vkCmdSetViewport(command_buffer, 0, 1, &viewport);
+
+    VkRect2D scissor {
+        .offset = { 0, 0 },
+        .extent = swapchain.extent,
+    };
+
+    vkCmdSetScissor(command_buffer, 0, 1, &scissor);
+    vkCmdDraw(command_buffer, 3, 1, 0, 0);
+
+    vkCmdEndRenderPass(command_buffer);
+    if(vkEndCommandBuffer(command_buffer) != VK_SUCCESS) {
+        throw std::runtime_error("failed to record command buffer");
+    }
+};

@@ -16,6 +16,7 @@ struct RenderQueue {
     VkQueue presentation;
 };
 
+RenderQueue get_render_queue(VkDevice logical_device, uint32_t graphics_queuee_id, uint32_t presentation_queue_id);
 std::optional<QueueFamily> get_queue_family(VkPhysicalDevice physical_device, VkSurfaceKHR surface);
 
 #endif

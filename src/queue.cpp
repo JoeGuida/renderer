@@ -2,6 +2,19 @@
 
 #include <spdlog/spdlog.h>
 
+RenderQueue get_render_queue(VkDevice logical_device, uint32_t graphics_queuee_id, uint32_t presentation_queue_id) {
+    VkQueue graphics_queue;
+    vkGetDeviceQueue(logical_device, graphics_queuee_id, 0, &graphics_queue);
+
+    VkQueue presentation_queue;
+    vkGetDeviceQueue(logical_device, presentation_queue_id, 0, &presentation_queue);
+
+    return RenderQueue {
+        .graphics = graphics_queue,
+        .presentation = presentation_queue
+    };
+}
+
 std::optional<QueueFamily> get_queue_family(VkPhysicalDevice physical_device, VkSurfaceKHR surface) {
     uint32_t queue_family_count = 0;
     vkGetPhysicalDeviceQueueFamilyProperties(physical_device, &queue_family_count, nullptr);

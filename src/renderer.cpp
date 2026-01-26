@@ -1,0 +1,101 @@
+#include "renderer.hpp"
+
+#include "command.hpp"
+#include "context.hpp"
+#include "debug_messenger.hpp"
+#include "device.hpp"
+#include "extension.hpp"
+#include "instance.hpp"
+#include "pipeline.hpp"
+#include "queue.hpp"
+#include "render_pass.hpp"
+#include "surface.hpp"
+#include "swapchain.hpp"
+#include "sync.hpp"
+
+void draw(VkContext context) {
+    vkWaitForFences(context.device.logical, 1, &context.sync.fences[0], VK_TRUE, UINT64_MAX);
+    vkResetFences(context.device.logical, 1, &context.sync.fences[0]);
+
+    uint32_t image_index;
+    vkAcquireNextImageKHR(context.device.logical, context.swapchain.handle, UINT64_MAX, context.sync.semaphores[0], VK_NULL_HANDLE, &image_index);
+
+    vkResetCommandBuffer(context.command_buffer, 0);
+    record_command_buffer(context.swapchain, image_index, context.command_buffer, context.render_pass, context.pipeline);
+
+    VkSemaphore wait_semaphores[] = { context.sync.semaphores[0] };
+    VkPipelineStageFlags wait_stages[] = { VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT };
+    VkSemaphore signal_semaphores[] = { context.sync.semaphores[1] };
+
+    VkSubmitInfo submit_info {
+        .sType = VK_STRUCTURE_TYPE_SUBMIT_INFO,
+        .waitSemaphoreCount = 1,
+        .pWaitSemaphores = wait_semaphores,
+        .pWaitDstStageMask = wait_stages,
+        .commandBufferCount = 1,
+        .pCommandBuffers = &context.command_buffer,
+        .signalSemaphoreCount = 1,
+        .pSignalSemaphores = signal_semaphores
+    };
+
+    if(vkQueueSubmit(context.queue.graphics, 1, &submit_info, context.sync.fences[0]) != VK_SUCCESS) {
+        throw std::runtime_error("failed to submit draw command buffer");
+    }
+
+    VkSwapchainKHR swapchains[] = { context.swapchain.handle };
+
+    VkPresentInfoKHR present_info {
+        .sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR,
+        .waitSemaphoreCount = 1,
+        .pWaitSemaphores = signal_semaphores,
+        .swapchainCount = 1,
+        .pSwapchains = swapchains,
+        .pImageIndices = &image_index,
+        .pResults = nullptr
+    };
+
+    vkQueuePresentKHR(context.queue.presentation, &present_info);
+}
+
+std::expected<VkContext, std::string> init_renderer(Renderer& renderer, PlatformWindow* window, HINSTANCE instance, const RendererExtensions& extensions) {
+    VkContext context = {};
+
+    if(!validation_layers_available(extensions)) {
+        return std::unexpected("validation layers are not available!");
+    }
+
+    if(!instance_extensions_supported(extensions)) {
+        return std::unexpected("requested instance extensions are not available");
+    }
+
+    context.instance = create_instance(extensions);
+    context.debug_messenger = setup_debug_messenger(context.instance);
+    context.surface = create_window_surface(context.instance, window, instance);
+    context.device.physical = create_physical_device(context.instance, context.surface, extensions);
+
+    auto queue_family = get_queue_family(context.device.physical, context.surface);
+    if(!queue_family.has_value()) {
+        return std::unexpected("queue_family not found");
+    }
+
+    context.device.logical = create_logical_device(context.device.physical, queue_family.value(), extensions.device);
+    context.queue = get_render_queue(context.device.logical, queue_family.value().graphics, queue_family.value().presentation);
+    auto swapchain = create_swapchain(window->hwnd, context.device, context.surface);
+    SwapchainSupportInfo info = query_swapchain_support(context.device.physical, context.surface);
+    context.swapchain.image_format = choose_surface_format(info.formats, VK_FORMAT_R8G8B8A8_UNORM, VK_COLOR_SPACE_SRGB_NONLINEAR_KHR).format;
+    context.swapchain.present_mode = choose_present_mode(info.present_modes, VK_PRESENT_MODE_MAILBOX_KHR);
+    create_image_views(context.device.logical, swapchain);
+
+    context.swapchain = swapchain;
+
+    context.render_pass = create_render_pass(context.device.logical, swapchain.image_format);
+    context.pipeline = create_graphics_pipeline(context.device.logical, swapchain.extent, context.render_pass);
+
+    create_framebuffers(context.device.logical, context.swapchain, context.render_pass);
+
+    context.command_pool = create_command_pool(context.device.logical, queue_family.value().graphics);
+    context.command_buffer = create_command_buffer(context.device.logical, context.command_pool);
+    context.sync = create_sync_objects(context.device.logical);
+
+    return context;
+}
