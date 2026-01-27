@@ -1,8 +1,8 @@
-#include "pipeline.hpp"
+#include <renderer/pipeline.hpp>
 
 #include <filesystem>
 
-#include "shader.hpp"
+#include <renderer/shader.hpp>
 
 VkPipeline create_graphics_pipeline(VkDevice device, VkExtent2D extent, VkRenderPass render_pass) {
     Shader vertex {

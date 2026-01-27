@@ -1,17 +1,17 @@
-#include "renderer.hpp"
+#include <renderer/renderer.hpp>
 
-#include "command.hpp"
-#include "context.hpp"
-#include "debug_messenger.hpp"
-#include "device.hpp"
-#include "extension.hpp"
-#include "instance.hpp"
-#include "pipeline.hpp"
-#include "queue.hpp"
-#include "render_pass.hpp"
-#include "surface.hpp"
-#include "swapchain.hpp"
-#include "sync.hpp"
+#include <renderer/command.hpp>
+#include <renderer/context.hpp>
+#include <renderer/debug_messenger.hpp>
+#include <renderer/device.hpp>
+#include <renderer/extension.hpp>
+#include <renderer/instance.hpp>
+#include <renderer/pipeline.hpp>
+#include <renderer/queue.hpp>
+#include <renderer/render_pass.hpp>
+#include <renderer/surface.hpp>
+#include <renderer/swapchain.hpp>
+#include <renderer/sync.hpp>
 
 void draw(VkContext context) {
     vkWaitForFences(context.device.logical, 1, &context.sync.fences[0], VK_TRUE, UINT64_MAX);

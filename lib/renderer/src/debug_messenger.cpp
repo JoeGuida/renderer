@@ -1,4 +1,4 @@
-#include "debug_messenger.hpp"
+#include <renderer/debug_messenger.hpp>
 
 #include <spdlog/spdlog.h>
 

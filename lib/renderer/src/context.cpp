@@ -1,6 +1,6 @@
-#include "context.hpp"
+#include <renderer/context.hpp>
 
-#include "debug_messenger.hpp"
+#include <renderer/debug_messenger.hpp>
 
 void destroy_context(VkContext context) {
     vkDeviceWaitIdle(context.device.logical);

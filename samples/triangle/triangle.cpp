@@ -1,16 +1,15 @@
-#include "samples/triangle_sample.hpp"
-
 #if defined(_WIN32) || defined(_WIN64)
 
 #include <spdlog/spdlog.h>
 
-#include <platform/windows/win32_window.hpp>
+#include <renderer/extension.hpp>
+#include <renderer/renderer.hpp>
 #include <window/window.hpp>
 
-#include "extension.hpp"
-#include "renderer.hpp"
+constexpr int width = 1280;
+constexpr int height = 720;
 
-void triangle_sample(HINSTANCE instance, int show_window, int width, int height) {
+int WinMain(HINSTANCE instance, HINSTANCE unused, LPSTR command_line, int show_window) {
     auto window_handle = initialize_window(instance, show_window, width, height, L"window class", L"renderer");
     if(!window_handle.has_value()) {
         spdlog::error(window_handle.error());

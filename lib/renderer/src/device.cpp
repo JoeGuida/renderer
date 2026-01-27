@@ -1,6 +1,6 @@
-#include "device.hpp"
+#include <renderer/device.hpp>
 
-#include "util.hpp"
+#include <renderer/util.hpp>
 
 int score_device(VkPhysicalDevice physical_device) {
     VkPhysicalDeviceProperties properties;

@@ -1,4 +1,4 @@
-#include "sync.hpp"
+#include <renderer/sync.hpp>
 
 Sync create_sync_objects(VkDevice device) {
     VkSemaphore semaphore0;
