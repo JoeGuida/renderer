@@ -18,6 +18,7 @@ struct VkContext {
     VkSurfaceKHR surface;
     RenderQueue queue;
     Swapchain swapchain;
+    Swapchain old_swapchain;
     VkRenderPass render_pass;
     VkPipeline pipeline;
     VkCommandPool command_pool;

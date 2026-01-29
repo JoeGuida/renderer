@@ -15,6 +15,7 @@ struct Swapchain {
     std::vector<VkImageView> image_views;
     VkExtent2D extent;
     VkFormat image_format;
+    VkColorSpaceKHR color_space;
     VkPresentModeKHR present_mode;
     std::vector<VkFramebuffer> framebuffers;
     VkRenderPass render_pass;
@@ -26,13 +27,13 @@ struct SwapchainSupportInfo {
     std::vector<VkPresentModeKHR> present_modes;
 };
 
-Swapchain create_swapchain(HWND hwnd, VulkanDevice device, VkSurfaceKHR surface);
+void create_swapchain(HWND hwnd, VulkanDevice device, VkSurfaceKHR surface, Swapchain& swapchain, VkFormat format, VkColorSpaceKHR color_space, VkPresentModeKHR present_mode, Swapchain* old_swapchain);
 SwapchainSupportInfo query_swapchain_support(VkPhysicalDevice physical_device, VkSurfaceKHR surface);
 VkSurfaceFormatKHR choose_surface_format(const std::vector<VkSurfaceFormatKHR>& available_formats, VkFormat format, VkColorSpaceKHR color_space);
 VkPresentModeKHR choose_present_mode(const std::vector<VkPresentModeKHR>& available_present_modes, VkPresentModeKHR mode);
 void create_framebuffers(VkDevice device, Swapchain& swapchain, VkRenderPass render_pass);
 void create_image_views(VkDevice device, Swapchain& swapchain);
 void destroy_swapchain(Swapchain& swapchain, VkDevice device);
-Swapchain rebuild_swapchain(HWND hwnd, VulkanDevice device, VkSurfaceKHR surface, Swapchain& old_swapchain);
+void rebuild_swapchain(HWND hwnd, VulkanDevice device, VkSurfaceKHR surface, Swapchain& swapchain, Swapchain& old_swapchain);
 
 #endif

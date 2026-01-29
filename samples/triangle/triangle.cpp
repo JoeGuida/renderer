@@ -1,8 +1,11 @@
 #if defined(_WIN32) || defined(_WIN64)
 
+#include <print>
+
 #include <spdlog/spdlog.h>
 
 #include <renderer/extension.hpp>
+#include <renderer/logger.hpp>
 #include <renderer/renderer.hpp>
 #include <window/window.hpp>
 
@@ -10,6 +13,10 @@ constexpr int width = 1280;
 constexpr int height = 720;
 
 int WinMain(HINSTANCE instance, HINSTANCE unused, LPSTR command_line, int show_window) {
+    if(auto logger = init_logger(); logger != true) {
+        std::println("could not initialize logger");
+    }
+
     auto window_handle = initialize_window(instance, show_window, width, height, L"window class", L"renderer");
     if(!window_handle.has_value()) {
         spdlog::error(window_handle.error());
@@ -34,7 +41,7 @@ int WinMain(HINSTANCE instance, HINSTANCE unused, LPSTR command_line, int show_w
     Renderer renderer;
     auto vk_context = init_renderer(renderer, window.handle.get(), instance, extensions);
     if(!vk_context.has_value()) {
-        spdlog::error("could not get vk_context!");
+        spdlog::error(vk_context.error());
     }
 
     std::function<void()> draw_callback = [&]() { draw(vk_context.value(), window.handle.get()); };

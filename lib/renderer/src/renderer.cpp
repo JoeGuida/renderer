@@ -13,16 +13,26 @@
 #include <renderer/swapchain.hpp>
 #include <renderer/sync.hpp>
 
-void draw(VkContext context, PlatformWindow* window) {
+void draw(VkContext& context, PlatformWindow* window) {
+    RECT client_rect;
+    GetClientRect(window->hwnd, &client_rect);
+    uint32_t rect_width = static_cast<uint32_t>(client_rect.right - client_rect.left);
+    uint32_t rect_height = static_cast<uint32_t>(client_rect.bottom - client_rect.top);
+    if(rect_width == 0 || rect_height == 0) {
+        return;
+    }
+
     vkWaitForFences(context.device.logical, 1, &context.sync.fences[0], VK_TRUE, UINT64_MAX);
     vkResetFences(context.device.logical, 1, &context.sync.fences[0]);
 
     uint32_t image_index;
     VkResult result = vkAcquireNextImageKHR(context.device.logical, context.swapchain.handle, UINT64_MAX, context.sync.semaphores[0], VK_NULL_HANDLE, &image_index);
-    if(result == VK_ERROR_OUT_OF_DATE_KHR || VK_SUBOPTIMAL_KHR) {
-        rebuild_swapchain(window->hwnd, context.device, context.surface, context.swapchain);
+    if(result == VK_ERROR_OUT_OF_DATE_KHR) {
+        context.old_swapchain = context.swapchain;
+        rebuild_swapchain(window->hwnd, context.device, context.surface, context.swapchain, context.old_swapchain);
+        return;
     }
-    else if(result != VK_SUCCESS) {
+    else if(result != VK_SUCCESS && result != VK_SUBOPTIMAL_KHR) {
         throw std::runtime_error("could not acquire swapchain image");
     }
 
@@ -60,7 +70,15 @@ void draw(VkContext context, PlatformWindow* window) {
         .pResults = nullptr
     };
 
-    vkQueuePresentKHR(context.queue.presentation, &present_info);
+    VkResult present = vkQueuePresentKHR(context.queue.presentation, &present_info);
+    if(present == VK_ERROR_OUT_OF_DATE_KHR) {
+        context.old_swapchain = context.swapchain;
+        rebuild_swapchain(window->hwnd, context.device, context.surface, context.swapchain, context.old_swapchain);
+        return;
+    }
+    else if(present != VK_SUCCESS && present != VK_SUBOPTIMAL_KHR) {
+         throw std::runtime_error("could not acquire swapchain image");
+    }
 }
 
 std::expected<VkContext, std::string> init_renderer(Renderer& renderer, PlatformWindow* window, HINSTANCE instance, const RendererExtensions& extensions) {
@@ -86,12 +104,9 @@ std::expected<VkContext, std::string> init_renderer(Renderer& renderer, Platform
 
     context.device.logical = create_logical_device(context.device.physical, queue_family.value(), extensions.device);
     context.queue = get_render_queue(context.device.logical, queue_family.value().graphics, queue_family.value().presentation);
-    auto swapchain = create_swapchain(window->hwnd, context.device, context.surface);
-    SwapchainSupportInfo info = query_swapchain_support(context.device.physical, context.surface);
-    context.swapchain.image_format = choose_surface_format(info.formats, VK_FORMAT_R8G8B8A8_UNORM, VK_COLOR_SPACE_SRGB_NONLINEAR_KHR).format;
-    context.swapchain.present_mode = choose_present_mode(info.present_modes, VK_PRESENT_MODE_MAILBOX_KHR);
+    Swapchain swapchain;
+    create_swapchain(window->hwnd, context.device, context.surface, swapchain, VK_FORMAT_R8G8B8A8_UNORM, VK_COLOR_SPACE_SRGB_NONLINEAR_KHR, VK_PRESENT_MODE_MAILBOX_KHR, nullptr);
     create_image_views(context.device.logical, swapchain);
-
     context.swapchain = swapchain;
 
     context.render_pass = create_render_pass(context.device.logical, swapchain.image_format);

@@ -1,55 +1,69 @@
 #include <renderer/swapchain.hpp>
 
-Swapchain create_swapchain(HWND hwnd, VulkanDevice device, VkSurfaceKHR surface) {
-    VkFormat surface_format = VK_FORMAT_B8G8R8A8_SRGB;
-    VkColorSpaceKHR color_space = VK_COLOR_SPACE_SRGB_NONLINEAR_KHR;
-    VkPresentModeKHR present_mode = VK_PRESENT_MODE_MAILBOX_KHR;
+#include <algorithm>
 
-    VkSurfaceCapabilitiesKHR capabilities;
-    vkGetPhysicalDeviceSurfaceCapabilitiesKHR(device.physical, surface, &capabilities);
+void create_swapchain(HWND hwnd, VulkanDevice device, VkSurfaceKHR surface, Swapchain& swapchain, VkFormat format = VK_FORMAT_B8G8R8A8_SRGB, VkColorSpaceKHR color_space = VK_COLOR_SPACE_SRGB_NONLINEAR_KHR, VkPresentModeKHR present_mode = VK_PRESENT_MODE_MAILBOX_KHR, Swapchain* old_swapchain = nullptr) {
+    SwapchainSupportInfo info = query_swapchain_support(device.physical, surface);
+    VkSurfaceFormatKHR surface_format = choose_surface_format(info.formats, format, color_space);
+    swapchain.image_format = surface_format.format;
+    swapchain.color_space = surface_format.colorSpace;
+    swapchain.present_mode = choose_present_mode(info.present_modes, present_mode);
+
 
     RECT client_rect;
     GetClientRect(hwnd, &client_rect);
-    VkExtent2D extent = { 
-        static_cast<uint32_t>(client_rect.right - client_rect.left),
-        static_cast<uint32_t>(client_rect.bottom - client_rect.top)
-    };
+    uint32_t rect_width = static_cast<uint32_t>(client_rect.right - client_rect.left);
+    uint32_t rect_height = static_cast<uint32_t>(client_rect.bottom - client_rect.top);
 
-    uint32_t image_count = 2;
+    if(info.capabilities.currentExtent.width == UINT32_MAX) {
+        uint32_t width = std::clamp(rect_width, info.capabilities.minImageExtent.width, info.capabilities.maxImageExtent.width);
+        uint32_t height = std::clamp(rect_height, info.capabilities.minImageExtent.height, info.capabilities.maxImageExtent.height);
+        swapchain.extent = { width, height };
+    }
+    else {
+        swapchain.extent = info.capabilities.currentExtent;
+    }
+
+    if(swapchain.extent.width == 0 or swapchain.extent.height == 0) {
+        return;
+    }
+
+    uint32_t image_count = info.capabilities.minImageCount + 1;
+    if(info.capabilities.maxImageCount > 0 && image_count > info.capabilities.maxImageCount) {
+        image_count = info.capabilities.maxImageCount;
+    }
 
     VkSwapchainCreateInfoKHR create_info {
         .sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR,
         .surface = surface,
         .minImageCount = image_count,
-        .imageFormat = surface_format,
-        .imageColorSpace = color_space,
-        .imageExtent = extent,
+        .imageFormat = swapchain.image_format,
+        .imageColorSpace = swapchain.color_space,
+        .imageExtent = swapchain.extent,
         .imageArrayLayers = 1,
         .imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
         .imageSharingMode = VK_SHARING_MODE_EXCLUSIVE,
-        .preTransform = capabilities.currentTransform,
+        .preTransform = info.capabilities.currentTransform,
         .compositeAlpha = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR,
-        .presentMode = present_mode,
+        .presentMode = swapchain.present_mode,
         .clipped = VK_TRUE,
         .oldSwapchain = VK_NULL_HANDLE
     };
 
-    VkSwapchainKHR swapchain;
-    if(vkCreateSwapchainKHR(device.logical, &create_info, nullptr, &swapchain) != VK_SUCCESS) {
+    if(old_swapchain) {
+        create_info.oldSwapchain = old_swapchain->handle;
+    }
+    else {
+        create_info.oldSwapchain = VK_NULL_HANDLE;
+    }
+
+    if(vkCreateSwapchainKHR(device.logical, &create_info, nullptr, &swapchain.handle) != VK_SUCCESS) {
         throw std::runtime_error("failed to create swapchain");
     }
 
-    std::vector<VkImage> swapchain_images;
-    vkGetSwapchainImagesKHR(device.logical, swapchain, &image_count, nullptr);
-    swapchain_images.resize(image_count);
-    vkGetSwapchainImagesKHR(device.logical, swapchain, &image_count, swapchain_images.data());
-
-    return Swapchain {
-        .handle = swapchain,
-        .images = swapchain_images,
-        .extent = extent,
-        .image_format = surface_format
-    };
+    vkGetSwapchainImagesKHR(device.logical, swapchain.handle, &image_count, nullptr);
+    swapchain.images.resize(image_count);
+    vkGetSwapchainImagesKHR(device.logical, swapchain.handle, &image_count, swapchain.images.data());
 }
 
 SwapchainSupportInfo query_swapchain_support(VkPhysicalDevice physical_device, VkSurfaceKHR surface) {
@@ -119,7 +133,9 @@ void create_framebuffers(VkDevice device, Swapchain& swapchain, VkRenderPass ren
 }
 
 void create_image_views(VkDevice device, Swapchain& swapchain) {
-    swapchain.image_views.resize(swapchain.images.size());
+    if(swapchain.images.size() > 0) {
+        swapchain.image_views.resize(swapchain.images.size());
+    }
 
     for(size_t i = 0; i < swapchain.images.size(); i++) {
         VkImageViewCreateInfo create_info{
@@ -160,16 +176,14 @@ void destroy_swapchain(Swapchain& swapchain, VkDevice device) {
     vkDestroySwapchainKHR(device, swapchain.handle, nullptr);
 }
 
-Swapchain rebuild_swapchain(HWND hwnd, VulkanDevice device, VkSurfaceKHR surface, Swapchain& old_swapchain) {
+void rebuild_swapchain(HWND hwnd, VulkanDevice device, VkSurfaceKHR surface, Swapchain& swapchain, Swapchain& old_swapchain) {
     vkDeviceWaitIdle(device.logical);
+    create_swapchain(hwnd, device, surface, swapchain, old_swapchain.image_format, old_swapchain.color_space, old_swapchain.present_mode, &old_swapchain);
+
+    if(!swapchain.images.empty()) {
+        create_image_views(device.logical, swapchain);
+        create_framebuffers(device.logical, swapchain, old_swapchain.render_pass);
+    }
 
     destroy_swapchain(old_swapchain, device.logical);
-
-    auto swapchain = create_swapchain(hwnd, device, surface);
-    swapchain.image_format = old_swapchain.image_format;
-    swapchain.present_mode = old_swapchain.present_mode;
-    create_image_views(device.logical, swapchain);
-    create_framebuffers(device.logical, swapchain, old_swapchain.render_pass);
-
-    return swapchain;
 }
