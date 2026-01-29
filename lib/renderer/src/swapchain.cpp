@@ -114,6 +114,8 @@ void create_framebuffers(VkDevice device, Swapchain& swapchain, VkRenderPass ren
             throw std::runtime_error("failed to create framebuffer");
         }
     }
+
+    swapchain.render_pass = render_pass;
 }
 
 void create_image_views(VkDevice device, Swapchain& swapchain) {
@@ -144,4 +146,30 @@ void create_image_views(VkDevice device, Swapchain& swapchain) {
             throw std::runtime_error("failed to create image views");
         }
     }
+}
+
+void destroy_swapchain(Swapchain& swapchain, VkDevice device) {
+    for(auto& framebuffer : swapchain.framebuffers) {
+        vkDestroyFramebuffer(device, framebuffer, nullptr);
+    }
+
+    for(auto& image_view : swapchain.image_views) {
+        vkDestroyImageView(device, image_view, nullptr);
+    }
+
+    vkDestroySwapchainKHR(device, swapchain.handle, nullptr);
+}
+
+Swapchain rebuild_swapchain(HWND hwnd, VulkanDevice device, VkSurfaceKHR surface, Swapchain& old_swapchain) {
+    vkDeviceWaitIdle(device.logical);
+
+    destroy_swapchain(old_swapchain, device.logical);
+
+    auto swapchain = create_swapchain(hwnd, device, surface);
+    swapchain.image_format = old_swapchain.image_format;
+    swapchain.present_mode = old_swapchain.present_mode;
+    create_image_views(device.logical, swapchain);
+    create_framebuffers(device.logical, swapchain, old_swapchain.render_pass);
+
+    return swapchain;
 }

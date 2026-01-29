@@ -17,6 +17,7 @@ struct Swapchain {
     VkFormat image_format;
     VkPresentModeKHR present_mode;
     std::vector<VkFramebuffer> framebuffers;
+    VkRenderPass render_pass;
 };
 
 struct SwapchainSupportInfo {
@@ -31,5 +32,7 @@ VkSurfaceFormatKHR choose_surface_format(const std::vector<VkSurfaceFormatKHR>& 
 VkPresentModeKHR choose_present_mode(const std::vector<VkPresentModeKHR>& available_present_modes, VkPresentModeKHR mode);
 void create_framebuffers(VkDevice device, Swapchain& swapchain, VkRenderPass render_pass);
 void create_image_views(VkDevice device, Swapchain& swapchain);
+void destroy_swapchain(Swapchain& swapchain, VkDevice device);
+Swapchain rebuild_swapchain(HWND hwnd, VulkanDevice device, VkSurfaceKHR surface, Swapchain& old_swapchain);
 
 #endif

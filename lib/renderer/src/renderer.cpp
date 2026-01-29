@@ -13,12 +13,18 @@
 #include <renderer/swapchain.hpp>
 #include <renderer/sync.hpp>
 
-void draw(VkContext context) {
+void draw(VkContext context, PlatformWindow* window) {
     vkWaitForFences(context.device.logical, 1, &context.sync.fences[0], VK_TRUE, UINT64_MAX);
     vkResetFences(context.device.logical, 1, &context.sync.fences[0]);
 
     uint32_t image_index;
-    vkAcquireNextImageKHR(context.device.logical, context.swapchain.handle, UINT64_MAX, context.sync.semaphores[0], VK_NULL_HANDLE, &image_index);
+    VkResult result = vkAcquireNextImageKHR(context.device.logical, context.swapchain.handle, UINT64_MAX, context.sync.semaphores[0], VK_NULL_HANDLE, &image_index);
+    if(result == VK_ERROR_OUT_OF_DATE_KHR || VK_SUBOPTIMAL_KHR) {
+        rebuild_swapchain(window->hwnd, context.device, context.surface, context.swapchain);
+    }
+    else if(result != VK_SUCCESS) {
+        throw std::runtime_error("could not acquire swapchain image");
+    }
 
     vkResetCommandBuffer(context.command_buffer, 0);
     record_command_buffer(context.swapchain, image_index, context.command_buffer, context.render_pass, context.pipeline);

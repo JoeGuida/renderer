@@ -37,7 +37,7 @@ int WinMain(HINSTANCE instance, HINSTANCE unused, LPSTR command_line, int show_w
         spdlog::error("could not get vk_context!");
     }
 
-    std::function<void()> draw_callback = [&]() { draw(vk_context.value()); };
+    std::function<void()> draw_callback = [&]() { draw(vk_context.value(), window.handle.get()); };
 
     run_window(window.handle.get(), draw_callback);
     destroy_context(vk_context.value());
