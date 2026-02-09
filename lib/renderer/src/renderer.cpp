@@ -81,8 +81,10 @@ void draw(VkContext& context, PlatformWindow* window) {
     }
 }
 
-std::expected<VkContext, std::string> init_renderer(Renderer& renderer, PlatformWindow* window, HINSTANCE instance, const RendererExtensions& extensions) {
+std::expected<VkContext, std::string> init_renderer(Renderer& renderer, PlatformWindow* window, HINSTANCE instance, const RendererFeatures& features) {
     VkContext context = {};
+
+    RendererExtensions extensions = get_renderer_extensions(features);
 
     if(!validation_layers_available(extensions)) {
         return std::unexpected("validation layers are not available!");

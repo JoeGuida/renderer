@@ -3,7 +3,7 @@
 
 #include <vulkan/vulkan.hpp>
 
-#if defined(WIN32) || defined(WIN64)
+#ifdef WINDOWS
 
 #include <platform/platform.hpp>
 #include <vulkan/vulkan_win32.h>

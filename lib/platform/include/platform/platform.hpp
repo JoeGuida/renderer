@@ -1,8 +1,10 @@
 #ifndef PLATFORM_PLATFORM_HPP
 #define PLATFORM_PLATFORM_HPP
 
-#if defined(_WIN32) || defined(_WIN64)
+#ifdef WINDOWS
     #include <platform/windows/win32.hpp>
+#elifdef APPLE
+    #include <platform/mac/mac.hpp>
 #endif
 
 #endif

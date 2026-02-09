@@ -56,7 +56,6 @@ std::expected<std::unique_ptr<PlatformWindow>, std::string> initialize_window(HI
         return std::unexpected("error registering window class");
     }
 
-
     HWND hwnd = CreateWindowEx(NULL, class_name, window_title, WS_OVERLAPPEDWINDOW,
                                  CW_USEDEFAULT, CW_USEDEFAULT, width, height,
                                  NULL, NULL, instance, nullptr);

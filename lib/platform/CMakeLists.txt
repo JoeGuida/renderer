@@ -5,6 +5,7 @@ set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
+if(WIN32)
 set(WINDOWS_SOURCES
     src/windows/win32_window.cpp
 )
@@ -20,8 +21,10 @@ target_compile_definitions(platform PUBLIC
     UNICODE
     _UNICODE
     _WIN32
+    WINDOWS
 )
 
 target_compile_options(platform PUBLIC
     "/utf-8"
 )
+endif()

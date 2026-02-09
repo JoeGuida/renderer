@@ -76,3 +76,24 @@ bool validation_layers_available(const RendererExtensions& extensions) {
 
     return true;
 }
+
+RendererExtensions get_renderer_extensions(const RendererFeatures& features) {
+    RendererExtensions extensions;
+    if(features.debug) {
+        extensions.instance.push_back("VK_EXT_debug_utils");
+    }
+
+    if(features.validation) {
+        extensions.validation.push_back("VK_LAYER_KHRONOS_validation");
+    }
+
+    if(features.presentation) {
+        extensions.device.push_back("VK_KHR_swapchain");
+        extensions.instance.push_back("VK_KHR_surface");
+#ifdef WINDOWS
+        extensions.instance.push_back("VK_KHR_win32_surface");
+#endif
+    }
+
+    return extensions;
+}

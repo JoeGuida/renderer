@@ -22,14 +22,17 @@ add_library(renderer STATIC
     src/sync.cpp
 )
 
+if(WIN32)
 target_compile_definitions(renderer PRIVATE
     UNICODE
     _UNICODE
+    WINDOWS
 )
 
 target_compile_options(renderer PRIVATE
     "/utf-8"
 )
+endif()
 
 target_include_directories(renderer PUBLIC
     include
