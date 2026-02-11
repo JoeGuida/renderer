@@ -2,9 +2,9 @@
 
 #include <renderer/util.hpp>
 
-int score_device(VkPhysicalDevice physical_device) {
+int score_device(const PhysicalDevice& device) {
     VkPhysicalDeviceProperties properties;
-    vkGetPhysicalDeviceProperties(physical_device, &properties);
+    vkGetPhysicalDeviceProperties(device.handle, &properties);
 
     int score = 0;
     if(properties.deviceType == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU) {
@@ -16,7 +16,7 @@ int score_device(VkPhysicalDevice physical_device) {
     return score;
 }
 
-VkDevice create_logical_device(VkPhysicalDevice device, QueueFamily queue_family, const std::vector<const char*>& device_extensions) {
+LogicalDevice create_logical_device(const PhysicalDevice& device, QueueFamily queue_family, const RendererExtensions& extensions) {
     float queue_priority = 1.0f;
 
     std::vector<uint32_t> unique_families { queue_family.graphics, queue_family.presentation };
@@ -50,19 +50,19 @@ VkDevice create_logical_device(VkPhysicalDevice device, QueueFamily queue_family
         .sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO,
         .queueCreateInfoCount = static_cast<uint32_t>(queue_create_infos.size()),
         .pQueueCreateInfos = queue_create_infos.data(),
-        .enabledExtensionCount = static_cast<uint32_t>(device_extensions.size()),
-        .ppEnabledExtensionNames = device_extensions.data(),
+        .enabledExtensionCount = static_cast<uint32_t>(extensions.device.size()),
+        .ppEnabledExtensionNames = extensions.device.data(),
         .pEnabledFeatures = &device_features
     };
 
-    if(vkCreateDevice(device, &create_info, nullptr, &logical_device) != VK_SUCCESS) {
+    if(vkCreateDevice(device.handle, &create_info, nullptr, &logical_device) != VK_SUCCESS) {
         throw std::runtime_error("failed to create logical device");
     }
 
-    return logical_device;
+    return LogicalDevice { .handle = logical_device };
 }
 
-VkPhysicalDevice create_physical_device(VkInstance instance, VkSurfaceKHR surface, const RendererExtensions& extensions) {
+PhysicalDevice create_physical_device(VkInstance instance, VkSurfaceKHR surface, const RendererExtensions& extensions) {
     VkPhysicalDevice physical_device = VK_NULL_HANDLE;
 
     uint32_t device_count = 0;
@@ -77,8 +77,11 @@ VkPhysicalDevice create_physical_device(VkInstance instance, VkSurfaceKHR surfac
 
     std::vector<int> scores;
     for(const auto& device : devices) {
-        if(is_gpu_usable(device, surface, extensions)) {
-            scores.push_back(score_device(device));
+        PhysicalDevice physical_device {
+            .handle = device
+        };
+        if(is_gpu_usable(physical_device, surface, extensions)) {
+            scores.push_back(score_device(physical_device));
         }
         else {
             scores.push_back(0);
@@ -93,5 +96,5 @@ VkPhysicalDevice create_physical_device(VkInstance instance, VkSurfaceKHR surfac
         throw std::runtime_error("no suitable physical device was found");
     }
 
-    return physical_device;
+    return PhysicalDevice { .handle = physical_device };
 }

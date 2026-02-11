@@ -13,7 +13,7 @@
 #include <renderer/swapchain.hpp>
 #include <renderer/sync.hpp>
 
-void draw(VkContext& context, PlatformWindow* window) {
+void draw(Context& context, PlatformWindow* window) {
     RECT client_rect;
     GetClientRect(window->hwnd, &client_rect);
     uint32_t rect_width = static_cast<uint32_t>(client_rect.right - client_rect.left);
@@ -22,11 +22,11 @@ void draw(VkContext& context, PlatformWindow* window) {
         return;
     }
 
-    vkWaitForFences(context.device.logical, 1, &context.sync.fences[0], VK_TRUE, UINT64_MAX);
-    vkResetFences(context.device.logical, 1, &context.sync.fences[0]);
+    vkWaitForFences(context.device.logical.handle, 1, &context.sync.fences[0], VK_TRUE, UINT64_MAX);
+    vkResetFences(context.device.logical.handle, 1, &context.sync.fences[0]);
 
     uint32_t image_index;
-    VkResult result = vkAcquireNextImageKHR(context.device.logical, context.swapchain.handle, UINT64_MAX, context.sync.semaphores[0], VK_NULL_HANDLE, &image_index);
+    VkResult result = vkAcquireNextImageKHR(context.device.logical.handle, context.swapchain.handle, UINT64_MAX, context.sync.semaphores[0], VK_NULL_HANDLE, &image_index);
     if(result == VK_ERROR_OUT_OF_DATE_KHR) {
         context.old_swapchain = context.swapchain;
         rebuild_swapchain(window->hwnd, context.device, context.surface, context.swapchain, context.old_swapchain);
@@ -81,8 +81,8 @@ void draw(VkContext& context, PlatformWindow* window) {
     }
 }
 
-std::expected<VkContext, std::string> init_renderer(Renderer& renderer, PlatformWindow* window, HINSTANCE instance, const RendererFeatures& features) {
-    VkContext context = {};
+std::expected<Context, std::string> init_renderer(Renderer& renderer, PlatformWindow* window, HINSTANCE instance, const RendererFeatures& features) {
+    Context context = {};
 
     RendererExtensions extensions = get_renderer_extensions(features);
 
@@ -99,26 +99,26 @@ std::expected<VkContext, std::string> init_renderer(Renderer& renderer, Platform
     context.surface = create_window_surface(context.instance, window, instance);
     context.device.physical = create_physical_device(context.instance, context.surface, extensions);
 
-    auto queue_family = get_queue_family(context.device.physical, context.surface);
+    auto queue_family = get_queue_family(context.device.physical.handle, context.surface);
     if(!queue_family.has_value()) {
         return std::unexpected("queue_family not found");
     }
 
-    context.device.logical = create_logical_device(context.device.physical, queue_family.value(), extensions.device);
-    context.queue = get_render_queue(context.device.logical, queue_family.value().graphics, queue_family.value().presentation);
+    context.device.logical = create_logical_device(context.device.physical, queue_family.value(), extensions);
+    context.queue = get_render_queue(context.device.logical.handle, queue_family.value().graphics, queue_family.value().presentation);
     Swapchain swapchain;
     create_swapchain(window->hwnd, context.device, context.surface, swapchain, VK_FORMAT_R8G8B8A8_UNORM, VK_COLOR_SPACE_SRGB_NONLINEAR_KHR, VK_PRESENT_MODE_MAILBOX_KHR, nullptr);
-    create_image_views(context.device.logical, swapchain);
+    create_image_views(context.device.logical.handle, swapchain);
     context.swapchain = swapchain;
 
-    context.render_pass = create_render_pass(context.device.logical, swapchain.image_format);
-    context.pipeline = create_graphics_pipeline(context.device.logical, swapchain.extent, context.render_pass);
+    context.render_pass = create_render_pass(context.device.logical.handle, swapchain.image_format);
+    context.pipeline = create_graphics_pipeline(context.device.logical.handle, swapchain.extent, context.render_pass);
 
-    create_framebuffers(context.device.logical, context.swapchain, context.render_pass);
+    create_framebuffers(context.device.logical.handle, context.swapchain, context.render_pass);
 
-    context.command_pool = create_command_pool(context.device.logical, queue_family.value().graphics);
-    context.command_buffer = create_command_buffer(context.device.logical, context.command_pool);
-    context.sync = create_sync_objects(context.device.logical);
+    context.command_pool = create_command_pool(context.device.logical.handle, queue_family.value().graphics);
+    context.command_buffer = create_command_buffer(context.device.logical.handle, context.command_pool);
+    context.sync = create_sync_objects(context.device.logical.handle);
 
     return context;
 }

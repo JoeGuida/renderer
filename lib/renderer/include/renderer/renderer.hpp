@@ -14,9 +14,9 @@ struct Renderer {
 
 };
 
-void draw(VkContext& context, PlatformWindow* window);
+void draw(Context& context, PlatformWindow* window);
 void initialize(Renderer& renderer);
 
-std::expected<VkContext, std::string> init_renderer(Renderer& renderer, PlatformWindow* window, HINSTANCE instance, const RendererFeatures& features);
+std::expected<Context, std::string> init_renderer(Renderer& renderer, PlatformWindow* window, HINSTANCE instance, const RendererFeatures& features);
 
 #endif

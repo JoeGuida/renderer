@@ -10,11 +10,11 @@
 #include "swapchain.hpp"
 #include "sync.hpp"
 
-struct VkContext {
+struct Context {
     VkInstance instance;
     VkDebugUtilsMessengerEXT debug_messenger;
     VkPhysicalDevice physical_device;
-    VulkanDevice device;
+    Device device;
     VkSurfaceKHR surface;
     RenderQueue queue;
     Swapchain swapchain;
@@ -26,6 +26,6 @@ struct VkContext {
     Sync sync;
 };
 
-void destroy_context(VkContext context);
+void destroy_context(const Context& context);
 
 #endif

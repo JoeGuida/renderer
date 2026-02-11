@@ -2,8 +2,8 @@
 
 #include <algorithm>
 
-void create_swapchain(HWND hwnd, VulkanDevice device, VkSurfaceKHR surface, Swapchain& swapchain, VkFormat format = VK_FORMAT_B8G8R8A8_SRGB, VkColorSpaceKHR color_space = VK_COLOR_SPACE_SRGB_NONLINEAR_KHR, VkPresentModeKHR present_mode = VK_PRESENT_MODE_MAILBOX_KHR, Swapchain* old_swapchain = nullptr) {
-    SwapchainSupportInfo info = query_swapchain_support(device.physical, surface);
+void create_swapchain(HWND hwnd, Device device, VkSurfaceKHR surface, Swapchain& swapchain, VkFormat format = VK_FORMAT_B8G8R8A8_SRGB, VkColorSpaceKHR color_space = VK_COLOR_SPACE_SRGB_NONLINEAR_KHR, VkPresentModeKHR present_mode = VK_PRESENT_MODE_MAILBOX_KHR, Swapchain* old_swapchain = nullptr) {
+    SwapchainSupportInfo info = query_swapchain_support(device.physical.handle, surface);
     VkSurfaceFormatKHR surface_format = choose_surface_format(info.formats, format, color_space);
     swapchain.image_format = surface_format.format;
     swapchain.color_space = surface_format.colorSpace;
@@ -57,13 +57,13 @@ void create_swapchain(HWND hwnd, VulkanDevice device, VkSurfaceKHR surface, Swap
         create_info.oldSwapchain = VK_NULL_HANDLE;
     }
 
-    if(vkCreateSwapchainKHR(device.logical, &create_info, nullptr, &swapchain.handle) != VK_SUCCESS) {
+    if(vkCreateSwapchainKHR(device.logical.handle, &create_info, nullptr, &swapchain.handle) != VK_SUCCESS) {
         throw std::runtime_error("failed to create swapchain");
     }
 
-    vkGetSwapchainImagesKHR(device.logical, swapchain.handle, &image_count, nullptr);
+    vkGetSwapchainImagesKHR(device.logical.handle, swapchain.handle, &image_count, nullptr);
     swapchain.images.resize(image_count);
-    vkGetSwapchainImagesKHR(device.logical, swapchain.handle, &image_count, swapchain.images.data());
+    vkGetSwapchainImagesKHR(device.logical.handle, swapchain.handle, &image_count, swapchain.images.data());
 }
 
 SwapchainSupportInfo query_swapchain_support(VkPhysicalDevice physical_device, VkSurfaceKHR surface) {
@@ -176,14 +176,14 @@ void destroy_swapchain(Swapchain& swapchain, VkDevice device) {
     vkDestroySwapchainKHR(device, swapchain.handle, nullptr);
 }
 
-void rebuild_swapchain(HWND hwnd, VulkanDevice device, VkSurfaceKHR surface, Swapchain& swapchain, Swapchain& old_swapchain) {
-    vkDeviceWaitIdle(device.logical);
+void rebuild_swapchain(HWND hwnd, Device device, VkSurfaceKHR surface, Swapchain& swapchain, Swapchain& old_swapchain) {
+    vkDeviceWaitIdle(device.logical.handle);
     create_swapchain(hwnd, device, surface, swapchain, old_swapchain.image_format, old_swapchain.color_space, old_swapchain.present_mode, &old_swapchain);
 
     if(!swapchain.images.empty()) {
-        create_image_views(device.logical, swapchain);
-        create_framebuffers(device.logical, swapchain, old_swapchain.render_pass);
+        create_image_views(device.logical.handle, swapchain);
+        create_framebuffers(device.logical.handle, swapchain, old_swapchain.render_pass);
     }
 
-    destroy_swapchain(old_swapchain, device.logical);
+    destroy_swapchain(old_swapchain, device.logical.handle);
 }
