@@ -90,9 +90,7 @@ RendererExtensions get_renderer_extensions(const RendererFeatures& features) {
     if(features.presentation) {
         extensions.device.push_back("VK_KHR_swapchain");
         extensions.instance.push_back("VK_KHR_surface");
-#ifdef WINDOWS
         extensions.instance.push_back("VK_KHR_win32_surface");
-#endif
     }
 
     return extensions;

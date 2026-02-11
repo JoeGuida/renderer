@@ -10,20 +10,12 @@
 constexpr int width = 1280;
 constexpr int height = 720;
 
-#ifdef WINDOWS
 int WinMain(HINSTANCE instance, HINSTANCE unused, LPSTR command_line, int show_window) {
-#elifdef APPLE
-int main() {
-#endif
     if(auto logger = init_logger(); logger != true) {
         std::println("could not initialize logger");
     }
 
-#ifdef WINDOWS
     auto window_handle = initialize_window(instance, show_window, width, height, L"window class", L"renderer");
-#elifdef APPLE
-    auto window_handle = initialize_window(show_window, width, height, L"window class", L"renderer");
-#endif
     if(!window_handle.has_value()) {
         spdlog::error(window_handle.error());
     }

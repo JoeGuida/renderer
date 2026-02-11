@@ -3,8 +3,6 @@
 
 #ifdef WINDOWS
     #include <platform/windows/win32.hpp>
-#elifdef APPLE
-    #include <platform/mac/mac.hpp>
 #endif
 
 #endif
