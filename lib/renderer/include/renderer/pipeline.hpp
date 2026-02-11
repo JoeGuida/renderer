@@ -3,6 +3,8 @@
 
 #include <vulkan/vulkan.hpp>
 
-VkPipeline create_graphics_pipeline(VkDevice device, VkExtent2D extent, VkRenderPass render_pass);
+#include "device.hpp"
+
+VkPipeline create_graphics_pipeline(const Device& device, VkExtent2D extent, VkRenderPass render_pass);
 
 #endif

@@ -11,15 +11,15 @@
 #include "swapchain.hpp"
 
 inline bool is_gpu_usable(PhysicalDevice device, VkSurfaceKHR surface, const RendererExtensions& extensions) {
-    if(!get_queue_family(device.handle, surface).has_value()) {
+    if(!get_queue_family(device, surface).has_value()) {
         return false;
     };
 
-    if(!device_extensions_supported(device.handle, extensions)) {
+    if(!device_extensions_supported(device, extensions)) {
         return false;
     }
 
-    SwapchainSupportInfo swapchain_support = query_swapchain_support(device.handle, surface);
+    SwapchainSupportInfo swapchain_support = query_swapchain_support(device, surface);
 
     return !swapchain_support.formats.empty() && !swapchain_support.present_modes.empty();
 }

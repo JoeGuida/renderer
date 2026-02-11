@@ -44,13 +44,13 @@ struct SurfaceFormat {
     ColorSpace color_space;
 };
 
-void create_swapchain(HWND hwnd, Device device, VkSurfaceKHR surface, Swapchain& swapchain, VkFormat format, VkColorSpaceKHR color_space, VkPresentModeKHR present_mode, Swapchain* old_swapchain);
-SwapchainSupportInfo query_swapchain_support(VkPhysicalDevice physical_device, VkSurfaceKHR surface);
+void create_swapchain(HWND hwnd, const Device& device, VkSurfaceKHR surface, Swapchain& swapchain, VkFormat format, VkColorSpaceKHR color_space, VkPresentModeKHR present_mode, Swapchain* old_swapchain);
+SwapchainSupportInfo query_swapchain_support(const PhysicalDevice& device, VkSurfaceKHR surface);
 VkSurfaceFormatKHR choose_surface_format(const std::vector<VkSurfaceFormatKHR>& available_formats, VkFormat format, VkColorSpaceKHR color_space);
 VkPresentModeKHR choose_present_mode(const std::vector<VkPresentModeKHR>& available_present_modes, VkPresentModeKHR mode);
-void create_framebuffers(VkDevice device, Swapchain& swapchain, VkRenderPass render_pass);
-void create_image_views(VkDevice device, Swapchain& swapchain);
-void destroy_swapchain(Swapchain& swapchain, VkDevice device);
-void rebuild_swapchain(HWND hwnd, Device device, VkSurfaceKHR surface, Swapchain& swapchain, Swapchain& old_swapchain);
+void create_framebuffers(const Device& device, Swapchain& swapchain, VkRenderPass render_pass);
+void create_image_views(const Device& device, Swapchain& swapchain);
+void destroy_swapchain(Swapchain& swapchain, const Device& device);
+void rebuild_swapchain(HWND hwnd, const Device& device, VkSurfaceKHR surface, Swapchain& swapchain, Swapchain& old_swapchain);
 
 #endif

@@ -2,7 +2,7 @@
 
 #include <stdexcept>
 
-VkCommandPool create_command_pool(VkDevice device, uint32_t graphics_queue_family) {
+VkCommandPool create_command_pool(const Device& device, uint32_t graphics_queue_family) {
     VkCommandPoolCreateInfo pool_info {
         .sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO,
         .flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT,
@@ -10,14 +10,14 @@ VkCommandPool create_command_pool(VkDevice device, uint32_t graphics_queue_famil
     };
 
     VkCommandPool command_pool;
-    if(vkCreateCommandPool(device, &pool_info, nullptr, &command_pool) != VK_SUCCESS) {
+    if(vkCreateCommandPool(device.logical.handle, &pool_info, nullptr, &command_pool) != VK_SUCCESS) {
         throw std::runtime_error("failed to create command pool");
     }
 
     return command_pool;
 }
 
-VkCommandBuffer create_command_buffer(VkDevice device, VkCommandPool command_pool) {
+VkCommandBuffer create_command_buffer(const Device& device, VkCommandPool command_pool) {
     VkCommandBufferAllocateInfo alloc_info {
         .sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO,
         .commandPool = command_pool,
@@ -26,7 +26,7 @@ VkCommandBuffer create_command_buffer(VkDevice device, VkCommandPool command_poo
     };
 
     VkCommandBuffer command_buffer;
-    if(vkAllocateCommandBuffers(device, &alloc_info, &command_buffer) != VK_SUCCESS) {
+    if(vkAllocateCommandBuffers(device.logical.handle, &alloc_info, &command_buffer) != VK_SUCCESS) {
         throw std::runtime_error("failed to allocate command buffers");
     }
 

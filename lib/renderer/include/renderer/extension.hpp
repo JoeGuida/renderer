@@ -7,11 +7,8 @@
 
 #include <vulkan/vulkan.hpp>
 
-struct RendererExtensions {
-    std::vector<const char*> instance;
-    std::vector<const char*> device;
-    std::vector<const char*> validation;
-};
+#include "device.hpp"
+#include "renderer_extensions.hpp"
 
 struct RendererFeatures {
     bool debug;
@@ -20,9 +17,9 @@ struct RendererFeatures {
 };
 
 std::unordered_set<std::string> get_supported_instance_extensions();
-std::unordered_set<std::string> get_supported_device_extensions(VkPhysicalDevice physical_device);
+std::unordered_set<std::string> get_supported_device_extensions(const PhysicalDevice& device);
 bool instance_extensions_supported(const RendererExtensions& extensions);
-bool device_extensions_supported(VkPhysicalDevice physical_device, const RendererExtensions& extensions);
+bool device_extensions_supported(const PhysicalDevice& device, const RendererExtensions& extensions);
 bool validation_layers_available(const RendererExtensions& extensions);
 RendererExtensions get_renderer_extensions(const RendererFeatures& features);
 

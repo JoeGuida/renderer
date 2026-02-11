@@ -4,7 +4,7 @@
 
 #include <renderer/shader.hpp>
 
-VkPipeline create_graphics_pipeline(VkDevice device, VkExtent2D extent, VkRenderPass render_pass) {
+VkPipeline create_graphics_pipeline(const Device& device, VkExtent2D extent, VkRenderPass render_pass) {
     Shader vertex {
         .filepath = std::filesystem::current_path() / "shaders" / "vert.spv",
         .stage = ShaderStage::Vertex,
@@ -136,7 +136,7 @@ VkPipeline create_graphics_pipeline(VkDevice device, VkExtent2D extent, VkRender
     };
 
     VkPipelineLayout pipeline_layout;
-    if(vkCreatePipelineLayout(device, &pipeline_layout_info, nullptr, &pipeline_layout) != VK_SUCCESS) {
+    if(vkCreatePipelineLayout(device.logical.handle, &pipeline_layout_info, nullptr, &pipeline_layout) != VK_SUCCESS) {
         throw std::runtime_error("failed to create pipeline layout");
     }
 
@@ -160,13 +160,13 @@ VkPipeline create_graphics_pipeline(VkDevice device, VkExtent2D extent, VkRender
     };
 
     VkPipeline graphics_pipeline;
-    if(vkCreateGraphicsPipelines(device, VK_NULL_HANDLE, 1, &pipeline_info, nullptr, &graphics_pipeline) != VK_SUCCESS) {
+    if(vkCreateGraphicsPipelines(device.logical.handle, VK_NULL_HANDLE, 1, &pipeline_info, nullptr, &graphics_pipeline) != VK_SUCCESS) {
         throw std::runtime_error("failed to create graphics pipeline");
     }
 
-    vkDestroyShaderModule(device, vertex.module, nullptr);
-    vkDestroyShaderModule(device, fragment.module, nullptr);
-    vkDestroyPipelineLayout(device, pipeline_layout, nullptr);
+    vkDestroyShaderModule(device.logical.handle, vertex.module, nullptr);
+    vkDestroyShaderModule(device.logical.handle, fragment.module, nullptr);
+    vkDestroyPipelineLayout(device.logical.handle, pipeline_layout, nullptr);
 
     return graphics_pipeline;
 }

@@ -99,26 +99,26 @@ std::expected<Context, std::string> init_renderer(Renderer& renderer, PlatformWi
     context.surface = create_window_surface(context.instance, window, instance);
     context.device.physical = create_physical_device(context.instance, context.surface, extensions);
 
-    auto queue_family = get_queue_family(context.device.physical.handle, context.surface);
+    auto queue_family = get_queue_family(context.device.physical, context.surface);
     if(!queue_family.has_value()) {
         return std::unexpected("queue_family not found");
     }
 
     context.device.logical = create_logical_device(context.device.physical, queue_family.value(), extensions);
-    context.queue = get_render_queue(context.device.logical.handle, queue_family.value().graphics, queue_family.value().presentation);
+    context.queue = get_render_queue(context.device, queue_family.value().graphics, queue_family.value().presentation);
     Swapchain swapchain;
     create_swapchain(window->hwnd, context.device, context.surface, swapchain, VK_FORMAT_R8G8B8A8_UNORM, VK_COLOR_SPACE_SRGB_NONLINEAR_KHR, VK_PRESENT_MODE_MAILBOX_KHR, nullptr);
-    create_image_views(context.device.logical.handle, swapchain);
+    create_image_views(context.device, swapchain);
     context.swapchain = swapchain;
 
-    context.render_pass = create_render_pass(context.device.logical.handle, swapchain.image_format);
-    context.pipeline = create_graphics_pipeline(context.device.logical.handle, swapchain.extent, context.render_pass);
+    context.render_pass = create_render_pass(context.device, swapchain.image_format);
+    context.pipeline = create_graphics_pipeline(context.device, swapchain.extent, context.render_pass);
 
-    create_framebuffers(context.device.logical.handle, context.swapchain, context.render_pass);
+    create_framebuffers(context.device, context.swapchain, context.render_pass);
 
-    context.command_pool = create_command_pool(context.device.logical.handle, queue_family.value().graphics);
-    context.command_buffer = create_command_buffer(context.device.logical.handle, context.command_pool);
-    context.sync = create_sync_objects(context.device.logical.handle);
+    context.command_pool = create_command_pool(context.device, queue_family.value().graphics);
+    context.command_buffer = create_command_buffer(context.device, context.command_pool);
+    context.sync = create_sync_objects(context.device);
 
     return context;
 }

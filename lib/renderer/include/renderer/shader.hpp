@@ -8,6 +8,8 @@
 
 #include <vulkan/vulkan.hpp>
 
+#include "device.hpp"
+
 enum class ShaderStage : uint32_t {
     Vertex   = VK_SHADER_STAGE_VERTEX_BIT,
     Fragment = VK_SHADER_STAGE_FRAGMENT_BIT,
@@ -22,6 +24,6 @@ struct Shader {
 };
 
 std::vector<char> read_file(const std::filesystem::path& filepath);
-void create_shader_module(VkDevice device, Shader& shader, const std::vector<char>& code);
+void create_shader_module(const Device& device, Shader& shader, const std::vector<char>& code);
 
 #endif

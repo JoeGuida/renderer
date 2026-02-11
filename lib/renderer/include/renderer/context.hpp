@@ -13,7 +13,6 @@
 struct Context {
     VkInstance instance;
     VkDebugUtilsMessengerEXT debug_messenger;
-    VkPhysicalDevice physical_device;
     Device device;
     VkSurfaceKHR surface;
     RenderQueue queue;

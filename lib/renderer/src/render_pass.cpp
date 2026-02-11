@@ -1,6 +1,6 @@
 #include <renderer/render_pass.hpp>
 
-VkRenderPass create_render_pass(VkDevice device, VkFormat format) {
+VkRenderPass create_render_pass(const Device& device, VkFormat format) {
     VkAttachmentDescription color_attachment{
         .format = format,
         .samples = VK_SAMPLE_COUNT_1_BIT,
@@ -44,7 +44,7 @@ VkRenderPass create_render_pass(VkDevice device, VkFormat format) {
         .pDependencies = &dependency
     };
 
-    if(vkCreateRenderPass(device, &render_pass_info, nullptr, &render_pass) != VK_SUCCESS) {
+    if(vkCreateRenderPass(device.logical.handle, &render_pass_info, nullptr, &render_pass) != VK_SUCCESS) {
         throw std::runtime_error("failed to create render pass");
     }
 

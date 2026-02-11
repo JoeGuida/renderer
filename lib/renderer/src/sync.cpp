@@ -1,6 +1,6 @@
 #include <renderer/sync.hpp>
 
-Sync create_sync_objects(VkDevice device) {
+Sync create_sync_objects(const Device& device) {
     VkSemaphore semaphore0;
     VkSemaphore semaphore1;
     VkFence fence;
@@ -14,9 +14,9 @@ Sync create_sync_objects(VkDevice device) {
         .flags = VK_FENCE_CREATE_SIGNALED_BIT
     };
 
-    if(vkCreateSemaphore(device, &semaphore_info, nullptr, &semaphore0) != VK_SUCCESS ||
-       vkCreateSemaphore(device, &semaphore_info, nullptr, &semaphore1) != VK_SUCCESS ||
-       vkCreateFence(device, &fence_info, nullptr, &fence) != VK_SUCCESS)
+    if(vkCreateSemaphore(device.logical.handle, &semaphore_info, nullptr, &semaphore0) != VK_SUCCESS ||
+       vkCreateSemaphore(device.logical.handle, &semaphore_info, nullptr, &semaphore1) != VK_SUCCESS ||
+       vkCreateFence(device.logical.handle, &fence_info, nullptr, &fence) != VK_SUCCESS)
     {
         throw std::runtime_error("failed to create semaphores");
     }

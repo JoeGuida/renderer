@@ -6,17 +6,14 @@
 
 #include <vulkan/vulkan.hpp>
 
-struct QueueFamily {
-    uint32_t graphics;
-    uint32_t presentation;
-};
+#include "device.hpp"
 
 struct RenderQueue {
     VkQueue graphics;
     VkQueue presentation;
 };
 
-RenderQueue get_render_queue(VkDevice logical_device, uint32_t graphics_queuee_id, uint32_t presentation_queue_id);
-std::optional<QueueFamily> get_queue_family(VkPhysicalDevice physical_device, VkSurfaceKHR surface);
+RenderQueue get_render_queue(const Device& device, uint32_t graphics_queuee_id, uint32_t presentation_queue_id);
+std::optional<QueueFamily> get_queue_family(const PhysicalDevice& device, VkSurfaceKHR surface);
 
 #endif

@@ -2,8 +2,8 @@
 
 #include <algorithm>
 
-void create_swapchain(HWND hwnd, Device device, VkSurfaceKHR surface, Swapchain& swapchain, VkFormat format = VK_FORMAT_B8G8R8A8_SRGB, VkColorSpaceKHR color_space = VK_COLOR_SPACE_SRGB_NONLINEAR_KHR, VkPresentModeKHR present_mode = VK_PRESENT_MODE_MAILBOX_KHR, Swapchain* old_swapchain = nullptr) {
-    SwapchainSupportInfo info = query_swapchain_support(device.physical.handle, surface);
+void create_swapchain(HWND hwnd, const Device& device, VkSurfaceKHR surface, Swapchain& swapchain, VkFormat format, VkColorSpaceKHR color_space, VkPresentModeKHR present_mode, Swapchain* old_swapchain) {
+    SwapchainSupportInfo info = query_swapchain_support(device.physical, surface);
     VkSurfaceFormatKHR surface_format = choose_surface_format(info.formats, format, color_space);
     swapchain.image_format = surface_format.format;
     swapchain.color_space = surface_format.colorSpace;
@@ -66,23 +66,23 @@ void create_swapchain(HWND hwnd, Device device, VkSurfaceKHR surface, Swapchain&
     vkGetSwapchainImagesKHR(device.logical.handle, swapchain.handle, &image_count, swapchain.images.data());
 }
 
-SwapchainSupportInfo query_swapchain_support(VkPhysicalDevice physical_device, VkSurfaceKHR surface) {
+SwapchainSupportInfo query_swapchain_support(const PhysicalDevice& device, VkSurfaceKHR surface) {
     SwapchainSupportInfo swapchain_support_info;
 
-    vkGetPhysicalDeviceSurfaceCapabilitiesKHR(physical_device, surface, &swapchain_support_info.capabilities);
+    vkGetPhysicalDeviceSurfaceCapabilitiesKHR(device.handle, surface, &swapchain_support_info.capabilities);
 
     uint32_t format_count = 0;
-    vkGetPhysicalDeviceSurfaceFormatsKHR(physical_device, surface, &format_count, nullptr);
+    vkGetPhysicalDeviceSurfaceFormatsKHR(device.handle, surface, &format_count, nullptr);
     if(format_count != 0) {
         swapchain_support_info.formats.resize(format_count);
-        vkGetPhysicalDeviceSurfaceFormatsKHR(physical_device, surface, &format_count, swapchain_support_info.formats.data());
+        vkGetPhysicalDeviceSurfaceFormatsKHR(device.handle, surface, &format_count, swapchain_support_info.formats.data());
     }
 
     uint32_t present_mode_count = 0;
-    vkGetPhysicalDeviceSurfacePresentModesKHR(physical_device, surface, &present_mode_count, nullptr);
+    vkGetPhysicalDeviceSurfacePresentModesKHR(device.handle, surface, &present_mode_count, nullptr);
     if(present_mode_count != 0) {
         swapchain_support_info.present_modes.resize(present_mode_count);
-        vkGetPhysicalDeviceSurfacePresentModesKHR(physical_device, surface, &present_mode_count, swapchain_support_info.present_modes.data());
+        vkGetPhysicalDeviceSurfacePresentModesKHR(device.handle, surface, &present_mode_count, swapchain_support_info.present_modes.data());
     }
 
     return swapchain_support_info;
@@ -108,7 +108,7 @@ VkPresentModeKHR choose_present_mode(const std::vector<VkPresentModeKHR>& availa
     return available_present_modes[0];
 }
 
-void create_framebuffers(VkDevice device, Swapchain& swapchain, VkRenderPass render_pass) {
+void create_framebuffers(const Device& device, Swapchain& swapchain, VkRenderPass render_pass) {
     swapchain.framebuffers.resize(swapchain.image_views.size());
 
     for(size_t i = 0; i < swapchain.image_views.size(); i++) {
@@ -124,7 +124,7 @@ void create_framebuffers(VkDevice device, Swapchain& swapchain, VkRenderPass ren
             .layers = 1
         };
 
-        if(vkCreateFramebuffer(device, &framebuffer_info, nullptr, &swapchain.framebuffers[i]) != VK_SUCCESS) {
+        if(vkCreateFramebuffer(device.logical.handle, &framebuffer_info, nullptr, &swapchain.framebuffers[i]) != VK_SUCCESS) {
             throw std::runtime_error("failed to create framebuffer");
         }
     }
@@ -132,7 +132,7 @@ void create_framebuffers(VkDevice device, Swapchain& swapchain, VkRenderPass ren
     swapchain.render_pass = render_pass;
 }
 
-void create_image_views(VkDevice device, Swapchain& swapchain) {
+void create_image_views(const Device& device, Swapchain& swapchain) {
     if(swapchain.images.size() > 0) {
         swapchain.image_views.resize(swapchain.images.size());
     }
@@ -158,32 +158,32 @@ void create_image_views(VkDevice device, Swapchain& swapchain) {
             }
         };
 
-        if(vkCreateImageView(device, &create_info, nullptr, &swapchain.image_views[i]) != VK_SUCCESS) {
+        if(vkCreateImageView(device.logical.handle, &create_info, nullptr, &swapchain.image_views[i]) != VK_SUCCESS) {
             throw std::runtime_error("failed to create image views");
         }
     }
 }
 
-void destroy_swapchain(Swapchain& swapchain, VkDevice device) {
+void destroy_swapchain(Swapchain& swapchain, const Device& device) {
     for(auto& framebuffer : swapchain.framebuffers) {
-        vkDestroyFramebuffer(device, framebuffer, nullptr);
+        vkDestroyFramebuffer(device.logical.handle, framebuffer, nullptr);
     }
 
     for(auto& image_view : swapchain.image_views) {
-        vkDestroyImageView(device, image_view, nullptr);
+        vkDestroyImageView(device.logical.handle, image_view, nullptr);
     }
 
-    vkDestroySwapchainKHR(device, swapchain.handle, nullptr);
+    vkDestroySwapchainKHR(device.logical.handle, swapchain.handle, nullptr);
 }
 
-void rebuild_swapchain(HWND hwnd, Device device, VkSurfaceKHR surface, Swapchain& swapchain, Swapchain& old_swapchain) {
+void rebuild_swapchain(HWND hwnd, const Device& device, VkSurfaceKHR surface, Swapchain& swapchain, Swapchain& old_swapchain) {
     vkDeviceWaitIdle(device.logical.handle);
     create_swapchain(hwnd, device, surface, swapchain, old_swapchain.image_format, old_swapchain.color_space, old_swapchain.present_mode, &old_swapchain);
 
     if(!swapchain.images.empty()) {
-        create_image_views(device.logical.handle, swapchain);
-        create_framebuffers(device.logical.handle, swapchain, old_swapchain.render_pass);
+        create_image_views(device, swapchain);
+        create_framebuffers(device, swapchain, old_swapchain.render_pass);
     }
 
-    destroy_swapchain(old_swapchain, device.logical.handle);
+    destroy_swapchain(old_swapchain, device);
 }

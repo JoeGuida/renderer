@@ -3,6 +3,8 @@
 
 #include <vulkan/vulkan.hpp>
 
-VkRenderPass create_render_pass(VkDevice device, VkFormat format);
+#include "device.hpp"
+
+VkRenderPass create_render_pass(const Device& device, VkFormat format);
 
 #endif

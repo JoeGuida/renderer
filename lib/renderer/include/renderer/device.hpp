@@ -3,8 +3,8 @@
 
 #include <vulkan/vulkan.hpp>
 
-#include "extension.hpp"
-#include "queue.hpp"
+#include "renderer_extensions.hpp"
+#include "queue_family.hpp"
 
 struct PhysicalDevice {
     VkPhysicalDevice handle;
