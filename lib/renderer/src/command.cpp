@@ -44,6 +44,11 @@ void record_command_buffer(Swapchain& swapchain, uint32_t framebuffer_index, VkC
         throw std::runtime_error("failed to begin recording command buffer");
     }
 
+    VkExtent2D extent {
+        .width = swapchain.extent.width,
+        .height = swapchain.extent.height
+    };
+
     VkClearValue clear_color = {{{ 0.0f, 0.0f, 0.0f, 1.0f }}};
     VkRenderPassBeginInfo render_pass_begin_info {
         .sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO,
@@ -51,7 +56,7 @@ void record_command_buffer(Swapchain& swapchain, uint32_t framebuffer_index, VkC
         .framebuffer = swapchain.framebuffers[framebuffer_index],
         .renderArea = {
             .offset = { 0, 0 },
-            .extent = swapchain.extent
+            .extent = extent
         },
         .clearValueCount = 1,
         .pClearValues = &clear_color
@@ -74,7 +79,7 @@ void record_command_buffer(Swapchain& swapchain, uint32_t framebuffer_index, VkC
 
     VkRect2D scissor {
         .offset = { 0, 0 },
-        .extent = swapchain.extent,
+        .extent = extent,
     };
 
     vkCmdSetScissor(command_buffer, 0, 1, &scissor);

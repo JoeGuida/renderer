@@ -18,10 +18,11 @@ void create_swapchain(HWND hwnd, const Device& device, VkSurfaceKHR surface, Swa
     if(info.capabilities.currentExtent.width == UINT32_MAX) {
         uint32_t width = std::clamp(rect_width, info.capabilities.minImageExtent.width, info.capabilities.maxImageExtent.width);
         uint32_t height = std::clamp(rect_height, info.capabilities.minImageExtent.height, info.capabilities.maxImageExtent.height);
-        swapchain.extent = { width, height };
+        swapchain.extent = Extent{ .width = width, .height = height };
     }
     else {
-        swapchain.extent = info.capabilities.currentExtent;
+        auto extent = info.capabilities.currentExtent;
+        swapchain.extent = Extent{ .width = extent.width, .height = extent.height };
     }
 
     if(swapchain.extent.width == 0 or swapchain.extent.height == 0) {
@@ -39,7 +40,7 @@ void create_swapchain(HWND hwnd, const Device& device, VkSurfaceKHR surface, Swa
         .minImageCount = image_count,
         .imageFormat = swapchain.image_format,
         .imageColorSpace = swapchain.color_space,
-        .imageExtent = swapchain.extent,
+        .imageExtent = VkExtent2D{ swapchain.extent.width, swapchain.extent.height },
         .imageArrayLayers = 1,
         .imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
         .imageSharingMode = VK_SHARING_MODE_EXCLUSIVE,

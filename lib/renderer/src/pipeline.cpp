@@ -4,7 +4,7 @@
 
 #include <renderer/shader.hpp>
 
-VkPipeline create_graphics_pipeline(const Device& device, VkExtent2D extent, VkRenderPass render_pass) {
+VkPipeline create_graphics_pipeline(const Device& device, Extent extent, VkRenderPass render_pass) {
     Shader vertex {
         .filepath = std::filesystem::current_path() / "shaders" / "vert.spv",
         .stage = ShaderStage::Vertex,
@@ -72,7 +72,10 @@ VkPipeline create_graphics_pipeline(const Device& device, VkExtent2D extent, VkR
 
     VkRect2D scissor{
         .offset = { 0, 0 },
-        .extent = extent
+        .extent = VkExtent2D {
+            .width = extent.width,
+            .height = extent.height
+        }
     };
 
     VkPipelineViewportStateCreateInfo viewport_state {

@@ -9,22 +9,9 @@
 
 #include "device.hpp"
 
-struct Swapchain {
-    VkSwapchainKHR handle;
-    std::vector<VkImage> images;
-    std::vector<VkImageView> image_views;
-    VkExtent2D extent;
-    VkFormat image_format;
-    VkColorSpaceKHR color_space;
-    VkPresentModeKHR present_mode;
-    std::vector<VkFramebuffer> framebuffers;
-    VkRenderPass render_pass;
-};
-
-struct SwapchainSupportInfo {
-    VkSurfaceCapabilitiesKHR capabilities;
-    std::vector<VkSurfaceFormatKHR> formats;
-    std::vector<VkPresentModeKHR> present_modes;
+struct Extent {
+    uint32_t width;
+    uint32_t height;
 };
 
 enum class ImageFormat : uint32_t {
@@ -42,6 +29,24 @@ enum class PresentMode : uint32_t {
 struct SurfaceFormat {
     ImageFormat image_format;
     ColorSpace color_space;
+};
+
+struct Swapchain {
+    VkSwapchainKHR handle;
+    std::vector<VkImage> images;
+    std::vector<VkImageView> image_views;
+    Extent extent;
+    VkFormat image_format;
+    VkColorSpaceKHR color_space;
+    VkPresentModeKHR present_mode;
+    std::vector<VkFramebuffer> framebuffers;
+    VkRenderPass render_pass;
+};
+
+struct SwapchainSupportInfo {
+    VkSurfaceCapabilitiesKHR capabilities;
+    std::vector<VkSurfaceFormatKHR> formats;
+    std::vector<VkPresentModeKHR> present_modes;
 };
 
 void create_swapchain(HWND hwnd, const Device& device, VkSurfaceKHR surface, Swapchain& swapchain, VkFormat format, VkColorSpaceKHR color_space, VkPresentModeKHR present_mode, Swapchain* old_swapchain);

@@ -4,7 +4,8 @@
 #include <vulkan/vulkan.hpp>
 
 #include "device.hpp"
+#include "swapchain.hpp"
 
-VkPipeline create_graphics_pipeline(const Device& device, VkExtent2D extent, VkRenderPass render_pass);
+VkPipeline create_graphics_pipeline(const Device& device, Extent extent, VkRenderPass render_pass);
 
 #endif
