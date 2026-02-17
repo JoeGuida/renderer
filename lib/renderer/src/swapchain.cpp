@@ -2,9 +2,9 @@
 
 #include <algorithm>
 
-void create_swapchain(HWND hwnd, const Device& device, VkSurfaceKHR surface, Swapchain& swapchain, VkFormat format, VkColorSpaceKHR color_space, VkPresentModeKHR present_mode, Swapchain* old_swapchain) {
+void create_swapchain(HWND hwnd, const Device& device, VkSurfaceKHR surface, Swapchain& swapchain, VkSurfaceFormatKHR format, VkPresentModeKHR present_mode, Swapchain* old_swapchain) {
     SwapchainSupportInfo info = query_swapchain_support(device.physical, surface);
-    VkSurfaceFormatKHR surface_format = choose_surface_format(info.formats, format, color_space);
+    VkSurfaceFormatKHR surface_format = choose_surface_format(info.formats, format.format, format.colorSpace);
     swapchain.image_format = surface_format.format;
     swapchain.color_space = surface_format.colorSpace;
     swapchain.present_mode = choose_present_mode(info.present_modes, present_mode);
@@ -179,7 +179,11 @@ void destroy_swapchain(Swapchain& swapchain, const Device& device) {
 
 void rebuild_swapchain(HWND hwnd, const Device& device, VkSurfaceKHR surface, Swapchain& swapchain, Swapchain& old_swapchain) {
     vkDeviceWaitIdle(device.logical.handle);
-    create_swapchain(hwnd, device, surface, swapchain, old_swapchain.image_format, old_swapchain.color_space, old_swapchain.present_mode, &old_swapchain);
+    VkSurfaceFormatKHR format {
+        .format = old_swapchain.image_format,
+        .colorSpace = old_swapchain.color_space
+    };
+    create_swapchain(hwnd, device, surface, swapchain, format, old_swapchain.present_mode, &old_swapchain);
 
     if(!swapchain.images.empty()) {
         create_image_views(device, swapchain);

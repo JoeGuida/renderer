@@ -107,7 +107,11 @@ std::expected<Context, std::string> init_renderer(Renderer& renderer, PlatformWi
     context.device.logical = create_logical_device(context.device.physical, queue_family.value(), extensions);
     context.queue = get_render_queue(context.device, queue_family.value().graphics, queue_family.value().presentation);
     Swapchain swapchain;
-    create_swapchain(window->hwnd, context.device, context.surface, swapchain, VK_FORMAT_R8G8B8A8_UNORM, VK_COLOR_SPACE_SRGB_NONLINEAR_KHR, VK_PRESENT_MODE_MAILBOX_KHR, nullptr);
+    VkSurfaceFormatKHR format {
+        .format = VK_FORMAT_R8G8B8A8_UNORM,
+        .colorSpace = VK_COLOR_SPACE_SRGB_NONLINEAR_KHR
+    };
+    create_swapchain(window->hwnd, context.device, context.surface, swapchain, format, VK_PRESENT_MODE_MAILBOX_KHR, nullptr);
     create_image_views(context.device, swapchain);
     context.swapchain = swapchain;
 
