@@ -1,5 +1,27 @@
 #include <renderer/extension.hpp>
 
+std::string to_string(Extension extension) {
+    switch(extension) {
+        case Extension::DebugUtils: {
+            return "VK_EXT_debug_utils";
+        }
+        case Extension::Validation: {
+            return "VK_LAYER_KHRONOS_validation";
+        }
+        case Extension::Swapchain: {
+            return "VK_KHR_swapchain";
+        }
+        case Extension::Surface: {
+            return "VK_KHR_surface";
+        }
+        case Extension::Win32Surface: {
+            return "VK_KHR_win32_surface";
+        }
+    }
+
+    return "";
+}
+
 std::unordered_set<std::string> get_supported_instance_extensions() {
     uint32_t extension_count = 0;
     vkEnumerateInstanceExtensionProperties(nullptr, &extension_count, nullptr);

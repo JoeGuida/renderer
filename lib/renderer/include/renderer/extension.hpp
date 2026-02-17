@@ -16,6 +16,15 @@ struct RendererFeatures {
     bool presentation;
 };
 
+enum class Extension : uint32_t {
+    DebugUtils,
+    Validation,
+    Swapchain,
+    Surface,
+    Win32Surface
+};
+
+std::string to_string(Extension extension);
 std::unordered_set<std::string> get_supported_instance_extensions();
 std::unordered_set<std::string> get_supported_device_extensions(const PhysicalDevice& device);
 bool instance_extensions_supported(const RendererExtensions& extensions);
