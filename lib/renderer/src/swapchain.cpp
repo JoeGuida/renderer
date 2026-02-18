@@ -5,8 +5,7 @@
 void create_swapchain(HWND hwnd, const Device& device, VkSurfaceKHR surface, Swapchain& swapchain, VkSurfaceFormatKHR format, VkPresentModeKHR present_mode, Swapchain* old_swapchain) {
     SwapchainSupportInfo info = query_swapchain_support(device.physical, surface);
     VkSurfaceFormatKHR surface_format = choose_surface_format(info.formats, format.format, format.colorSpace);
-    swapchain.image_format = surface_format.format;
-    swapchain.color_space = surface_format.colorSpace;
+    swapchain.surface_format = surface_format;
     swapchain.present_mode = choose_present_mode(info.present_modes, present_mode);
 
 
@@ -38,8 +37,8 @@ void create_swapchain(HWND hwnd, const Device& device, VkSurfaceKHR surface, Swa
         .sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR,
         .surface = surface,
         .minImageCount = image_count,
-        .imageFormat = swapchain.image_format,
-        .imageColorSpace = swapchain.color_space,
+        .imageFormat = swapchain.surface_format.format,
+        .imageColorSpace = swapchain.surface_format.colorSpace,
         .imageExtent = VkExtent2D{ swapchain.extent.width, swapchain.extent.height },
         .imageArrayLayers = 1,
         .imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
@@ -143,7 +142,7 @@ void create_image_views(const Device& device, Swapchain& swapchain) {
             .sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO,
             .image = swapchain.images[i],
             .viewType = VK_IMAGE_VIEW_TYPE_2D,
-            .format = swapchain.image_format,
+            .format = swapchain.surface_format.format,
             .components {
                 .r = VK_COMPONENT_SWIZZLE_IDENTITY,
                 .g = VK_COMPONENT_SWIZZLE_IDENTITY,
@@ -180,8 +179,8 @@ void destroy_swapchain(Swapchain& swapchain, const Device& device) {
 void rebuild_swapchain(HWND hwnd, const Device& device, VkSurfaceKHR surface, Swapchain& swapchain, Swapchain& old_swapchain) {
     vkDeviceWaitIdle(device.logical.handle);
     VkSurfaceFormatKHR format {
-        .format = old_swapchain.image_format,
-        .colorSpace = old_swapchain.color_space
+        .format = old_swapchain.surface_format.format,
+        .colorSpace = old_swapchain.surface_format.colorSpace
     };
     create_swapchain(hwnd, device, surface, swapchain, format, old_swapchain.present_mode, &old_swapchain);
 

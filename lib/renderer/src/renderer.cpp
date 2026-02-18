@@ -115,7 +115,7 @@ std::expected<Context, std::string> init_renderer(Renderer& renderer, PlatformWi
     create_image_views(context.device, swapchain);
     context.swapchain = swapchain;
 
-    context.render_pass = create_render_pass(context.device, swapchain.image_format);
+    context.render_pass = create_render_pass(context.device, swapchain.surface_format.format);
     context.pipeline = create_graphics_pipeline(context.device, swapchain.extent, context.render_pass);
 
     create_framebuffers(context.device, context.swapchain, context.render_pass);
