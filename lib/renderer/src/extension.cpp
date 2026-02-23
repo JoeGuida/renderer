@@ -37,12 +37,12 @@ std::unordered_set<std::string> get_supported_instance_extensions() {
     return supported_extensions;
 }
 
-std::unordered_set<std::string> get_supported_device_extensions(const PhysicalDevice& device) {
+std::unordered_set<std::string> get_supported_device_extensions(VkPhysicalDevice device) {
     uint32_t device_extension_count = 0;
-    vkEnumerateDeviceExtensionProperties(device.handle, nullptr, &device_extension_count, nullptr);
+    vkEnumerateDeviceExtensionProperties(device, nullptr, &device_extension_count, nullptr);
 
     std::vector<VkExtensionProperties> device_extensions(device_extension_count);
-    vkEnumerateDeviceExtensionProperties(device.handle, nullptr, &device_extension_count, device_extensions.data());
+    vkEnumerateDeviceExtensionProperties(device, nullptr, &device_extension_count, device_extensions.data());
 
     std::unordered_set<std::string> supported_extensions;
     for(const auto& extension : device_extensions) {
@@ -63,7 +63,7 @@ bool instance_extensions_supported(const RendererExtensions& extensions) {
     return true;
 }
 
-bool device_extensions_supported(const PhysicalDevice& device, const RendererExtensions& extensions) {
+bool device_extensions_supported(VkPhysicalDevice device, const RendererExtensions& extensions) {
     auto supported = get_supported_device_extensions(device);
     for(const auto& extension : extensions.device) {
         if(!supported.contains(extension)) {

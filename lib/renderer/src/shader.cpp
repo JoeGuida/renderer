@@ -27,7 +27,7 @@ void create_shader_module(const Device& device, Shader& shader, const std::vecto
         .pCode = reinterpret_cast<const uint32_t*>(code.data())
     };
 
-    if(vkCreateShaderModule(device.logical.handle, &create_info, nullptr, &shader.module) != VK_SUCCESS) {
+    if(vkCreateShaderModule(device.logical, &create_info, nullptr, &shader.module) != VK_SUCCESS) {
         throw std::runtime_error("failed to create shader module");
     }
 }

@@ -49,7 +49,7 @@ struct SwapchainSupportInfo {
 };
 
 void create_swapchain(HWND hwnd, const Device& device, VkSurfaceKHR surface, Swapchain& swapchain, VkSurfaceFormatKHR format, VkPresentModeKHR present_mode, Swapchain* old_swapchain);
-SwapchainSupportInfo query_swapchain_support(const PhysicalDevice& device, VkSurfaceKHR surface);
+SwapchainSupportInfo query_swapchain_support(VkPhysicalDevice device, VkSurfaceKHR surface);
 VkSurfaceFormatKHR choose_surface_format(const std::vector<VkSurfaceFormatKHR>& available_formats, VkFormat format, VkColorSpaceKHR color_space);
 VkPresentModeKHR choose_present_mode(const std::vector<VkPresentModeKHR>& available_present_modes, VkPresentModeKHR mode);
 void create_framebuffers(const Device& device, Swapchain& swapchain, VkRenderPass render_pass);

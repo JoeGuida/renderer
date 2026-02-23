@@ -2,6 +2,15 @@
 
 #include <functional>
 
+std::pair<uint32_t, uint32_t> get_window_size(PlatformWindow* window) {
+    RECT client_rect;
+    GetClientRect(window->hwnd, &client_rect);
+    uint32_t width = static_cast<uint32_t>(client_rect.right - client_rect.left);
+    uint32_t height = static_cast<uint32_t>(client_rect.bottom - client_rect.top);
+
+    return { width, height };
+}
+
 void run_window(PlatformWindow* handle, std::function<void()> draw) {
     MSG message;
     ZeroMemory(&message, sizeof(MSG));

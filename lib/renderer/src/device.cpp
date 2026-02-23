@@ -2,9 +2,9 @@
 
 #include <renderer/util.hpp>
 
-int score_device(const PhysicalDevice& device) {
+int score_device(VkPhysicalDevice device) {
     VkPhysicalDeviceProperties properties;
-    vkGetPhysicalDeviceProperties(device.handle, &properties);
+    vkGetPhysicalDeviceProperties(device, &properties);
 
     int score = 0;
     if(properties.deviceType == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU) {
@@ -16,7 +16,7 @@ int score_device(const PhysicalDevice& device) {
     return score;
 }
 
-LogicalDevice create_logical_device(const PhysicalDevice& device, QueueFamily queue_family, const RendererExtensions& extensions) {
+VkDevice create_logical_device(VkPhysicalDevice device, QueueFamily queue_family, const RendererExtensions& extensions) {
     float queue_priority = 1.0f;
 
     std::vector<uint32_t> unique_families { queue_family.graphics, queue_family.presentation };
@@ -55,14 +55,14 @@ LogicalDevice create_logical_device(const PhysicalDevice& device, QueueFamily qu
         .pEnabledFeatures = &device_features
     };
 
-    if(vkCreateDevice(device.handle, &create_info, nullptr, &logical_device) != VK_SUCCESS) {
+    if(vkCreateDevice(device, &create_info, nullptr, &logical_device) != VK_SUCCESS) {
         throw std::runtime_error("failed to create logical device");
     }
 
-    return LogicalDevice { .handle = logical_device };
+    return logical_device;
 }
 
-PhysicalDevice create_physical_device(VkInstance instance, VkSurfaceKHR surface, const RendererExtensions& extensions) {
+VkPhysicalDevice create_physical_device(VkInstance instance, VkSurfaceKHR surface, const RendererExtensions& extensions) {
     VkPhysicalDevice physical_device = VK_NULL_HANDLE;
 
     uint32_t device_count = 0;
@@ -77,11 +77,8 @@ PhysicalDevice create_physical_device(VkInstance instance, VkSurfaceKHR surface,
 
     std::vector<int> scores;
     for(const auto& device : devices) {
-        PhysicalDevice physical_device {
-            .handle = device
-        };
-        if(is_gpu_usable(physical_device, surface, extensions)) {
-            scores.push_back(score_device(physical_device));
+        if(is_gpu_usable(device, surface, extensions)) {
+            scores.push_back(score_device(device));
         }
         else {
             scores.push_back(0);
@@ -96,5 +93,5 @@ PhysicalDevice create_physical_device(VkInstance instance, VkSurfaceKHR surface,
         throw std::runtime_error("no suitable physical device was found");
     }
 
-    return PhysicalDevice { .handle = physical_device };
+    return physical_device;
 }

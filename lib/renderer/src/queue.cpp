@@ -4,10 +4,10 @@
 
 RenderQueue get_render_queue(const Device& device, uint32_t graphics_queuee_id, uint32_t presentation_queue_id) {
     VkQueue graphics_queue;
-    vkGetDeviceQueue(device.logical.handle, graphics_queuee_id, 0, &graphics_queue);
+    vkGetDeviceQueue(device.logical, graphics_queuee_id, 0, &graphics_queue);
 
     VkQueue presentation_queue;
-    vkGetDeviceQueue(device.logical.handle, presentation_queue_id, 0, &presentation_queue);
+    vkGetDeviceQueue(device.logical, presentation_queue_id, 0, &presentation_queue);
 
     return RenderQueue {
         .graphics = graphics_queue,
@@ -15,12 +15,12 @@ RenderQueue get_render_queue(const Device& device, uint32_t graphics_queuee_id, 
     };
 }
 
-std::optional<QueueFamily> get_queue_family(const PhysicalDevice& device, VkSurfaceKHR surface) {
+std::optional<QueueFamily> get_queue_family(VkPhysicalDevice device, VkSurfaceKHR surface) {
     uint32_t queue_family_count = 0;
-    vkGetPhysicalDeviceQueueFamilyProperties(device.handle, &queue_family_count, nullptr);
+    vkGetPhysicalDeviceQueueFamilyProperties(device, &queue_family_count, nullptr);
 
     std::vector<VkQueueFamilyProperties> queue_families(queue_family_count);
-    vkGetPhysicalDeviceQueueFamilyProperties(device.handle, &queue_family_count, queue_families.data());
+    vkGetPhysicalDeviceQueueFamilyProperties(device, &queue_family_count, queue_families.data());
 
     std::optional<uint32_t> graphics;
     std::optional<uint32_t> presentation;
@@ -29,7 +29,7 @@ std::optional<QueueFamily> get_queue_family(const PhysicalDevice& device, VkSurf
         bool graphics_supported = queue_families[i].queueFlags & VK_QUEUE_GRAPHICS_BIT;
 
         VkBool32 presentation_supported = VK_FALSE;
-        vkGetPhysicalDeviceSurfaceSupportKHR(device.handle, i, surface, &presentation_supported);
+        vkGetPhysicalDeviceSurfaceSupportKHR(device, i, surface, &presentation_supported);
 
         if(graphics_supported && presentation_supported) {
             return QueueFamily {

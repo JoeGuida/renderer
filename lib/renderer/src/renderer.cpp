@@ -14,19 +14,16 @@
 #include <renderer/sync.hpp>
 
 void draw(Context& context, PlatformWindow* window) {
-    RECT client_rect;
-    GetClientRect(window->hwnd, &client_rect);
-    uint32_t rect_width = static_cast<uint32_t>(client_rect.right - client_rect.left);
-    uint32_t rect_height = static_cast<uint32_t>(client_rect.bottom - client_rect.top);
-    if(rect_width == 0 || rect_height == 0) {
+    auto [width, height] = get_window_size(window);
+    if(width == 0 || height == 0) {
         return;
     }
 
-    vkWaitForFences(context.device.logical.handle, 1, &context.sync.fences[0], VK_TRUE, UINT64_MAX);
-    vkResetFences(context.device.logical.handle, 1, &context.sync.fences[0]);
+    vkWaitForFences(context.device.logical, 1, &context.sync.fences[0], VK_TRUE, UINT64_MAX);
+    vkResetFences(context.device.logical, 1, &context.sync.fences[0]);
 
     uint32_t image_index;
-    VkResult result = vkAcquireNextImageKHR(context.device.logical.handle, context.swapchain.handle, UINT64_MAX, context.sync.semaphores[0], VK_NULL_HANDLE, &image_index);
+    VkResult result = vkAcquireNextImageKHR(context.device.logical, context.swapchain.handle, UINT64_MAX, context.sync.semaphores[0], VK_NULL_HANDLE, &image_index);
     if(result == VK_ERROR_OUT_OF_DATE_KHR) {
         context.old_swapchain = context.swapchain;
         rebuild_swapchain(window->hwnd, context.device, context.surface, context.swapchain, context.old_swapchain);

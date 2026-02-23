@@ -14,6 +14,6 @@ struct RenderQueue {
 };
 
 RenderQueue get_render_queue(const Device& device, uint32_t graphics_queuee_id, uint32_t presentation_queue_id);
-std::optional<QueueFamily> get_queue_family(const PhysicalDevice& device, VkSurfaceKHR surface);
+std::optional<QueueFamily> get_queue_family(VkPhysicalDevice device, VkSurfaceKHR surface);
 
 #endif

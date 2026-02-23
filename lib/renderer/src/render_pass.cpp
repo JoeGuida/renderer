@@ -44,7 +44,7 @@ VkRenderPass create_render_pass(const Device& device, VkFormat format) {
         .pDependencies = &dependency
     };
 
-    if(vkCreateRenderPass(device.logical.handle, &render_pass_info, nullptr, &render_pass) != VK_SUCCESS) {
+    if(vkCreateRenderPass(device.logical, &render_pass_info, nullptr, &render_pass) != VK_SUCCESS) {
         throw std::runtime_error("failed to create render pass");
     }
 

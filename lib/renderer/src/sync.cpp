@@ -14,9 +14,9 @@ Sync create_sync_objects(const Device& device) {
         .flags = VK_FENCE_CREATE_SIGNALED_BIT
     };
 
-    if(vkCreateSemaphore(device.logical.handle, &semaphore_info, nullptr, &semaphore0) != VK_SUCCESS ||
-       vkCreateSemaphore(device.logical.handle, &semaphore_info, nullptr, &semaphore1) != VK_SUCCESS ||
-       vkCreateFence(device.logical.handle, &fence_info, nullptr, &fence) != VK_SUCCESS)
+    if(vkCreateSemaphore(device.logical, &semaphore_info, nullptr, &semaphore0) != VK_SUCCESS ||
+       vkCreateSemaphore(device.logical, &semaphore_info, nullptr, &semaphore1) != VK_SUCCESS ||
+       vkCreateFence(device.logical, &fence_info, nullptr, &fence) != VK_SUCCESS)
     {
         throw std::runtime_error("failed to create semaphores");
     }

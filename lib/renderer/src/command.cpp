@@ -10,7 +10,7 @@ VkCommandPool create_command_pool(const Device& device, uint32_t graphics_queue_
     };
 
     VkCommandPool command_pool;
-    if(vkCreateCommandPool(device.logical.handle, &pool_info, nullptr, &command_pool) != VK_SUCCESS) {
+    if(vkCreateCommandPool(device.logical, &pool_info, nullptr, &command_pool) != VK_SUCCESS) {
         throw std::runtime_error("failed to create command pool");
     }
 
@@ -26,7 +26,7 @@ VkCommandBuffer create_command_buffer(const Device& device, VkCommandPool comman
     };
 
     VkCommandBuffer command_buffer;
-    if(vkAllocateCommandBuffers(device.logical.handle, &alloc_info, &command_buffer) != VK_SUCCESS) {
+    if(vkAllocateCommandBuffers(device.logical, &alloc_info, &command_buffer) != VK_SUCCESS) {
         throw std::runtime_error("failed to allocate command buffers");
     }
 

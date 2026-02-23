@@ -26,9 +26,9 @@ enum class Extension : uint32_t {
 
 std::string to_string(Extension extension);
 std::unordered_set<std::string> get_supported_instance_extensions();
-std::unordered_set<std::string> get_supported_device_extensions(const PhysicalDevice& device);
+std::unordered_set<std::string> get_supported_device_extensions(VkPhysicalDevice device);
 bool instance_extensions_supported(const RendererExtensions& extensions);
-bool device_extensions_supported(const PhysicalDevice& device, const RendererExtensions& extensions);
+bool device_extensions_supported(VkPhysicalDevice device, const RendererExtensions& extensions);
 bool validation_layers_available(const RendererExtensions& extensions);
 RendererExtensions get_renderer_extensions(const RendererFeatures& features);
 

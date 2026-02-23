@@ -13,6 +13,7 @@ struct PlatformWindow {
     HDC hdc;
 };
 
+std::pair<uint32_t, uint32_t> get_window_size(PlatformWindow* window);
 void run_window(PlatformWindow* handle, std::function<void()> draw);
 LRESULT CALLBACK window_proc(HWND hwnd, UINT message, WPARAM wparam, LPARAM lparam);
 std::expected<std::unique_ptr<PlatformWindow>, std::string> initialize_window(HINSTANCE instance, int show_window_flags, int width, int height, const wchar_t* class_name, const wchar_t* window_title);

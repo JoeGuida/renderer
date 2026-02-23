@@ -6,21 +6,13 @@
 #include "renderer_extensions.hpp"
 #include "queue_family.hpp"
 
-struct PhysicalDevice {
-    VkPhysicalDevice handle;
-};
-
-struct LogicalDevice {
-    VkDevice handle;
-};
-
 struct Device {
-    PhysicalDevice physical;
-    LogicalDevice logical;
+    VkPhysicalDevice physical;
+    VkDevice logical;
 };
 
-int score_device(const PhysicalDevice& device);
-LogicalDevice create_logical_device(const PhysicalDevice& device, QueueFamily queue_family, const RendererExtensions& extensions);
-PhysicalDevice create_physical_device(VkInstance instance, VkSurfaceKHR surface, const RendererExtensions& extensions);
+int score_device(VkPhysicalDevice device);
+VkDevice create_logical_device(VkPhysicalDevice device, QueueFamily queue_family, const RendererExtensions& extensions);
+VkPhysicalDevice create_physical_device(VkInstance instance, VkSurfaceKHR surface, const RendererExtensions& extensions);
 
 #endif
