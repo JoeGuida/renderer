@@ -5,6 +5,7 @@
 #include <renderer/debug_messenger.hpp>
 #include <renderer/device.hpp>
 #include <renderer/extension.hpp>
+#include <renderer/frame_data.hpp>
 #include <renderer/instance.hpp>
 #include <renderer/pipeline.hpp>
 #include <renderer/queue.hpp>
@@ -19,11 +20,11 @@ void draw(Context& context, PlatformWindow* window) {
         return;
     }
 
-    vkWaitForFences(context.device.logical, 1, &context.sync.fences[0], VK_TRUE, UINT64_MAX);
-    vkResetFences(context.device.logical, 1, &context.sync.fences[0]);
+    vkWaitForFences(context.device.logical, 1, &context.frame_data.fence, VK_TRUE, UINT64_MAX);
+    vkResetFences(context.device.logical, 1, &context.frame_data.fence);
 
     uint32_t image_index;
-    VkResult result = vkAcquireNextImageKHR(context.device.logical, context.swapchain.handle, UINT64_MAX, context.sync.semaphores[0], VK_NULL_HANDLE, &image_index);
+    VkResult result = vkAcquireNextImageKHR(context.device.logical, context.swapchain.handle, UINT64_MAX, context.frame_data.begin, VK_NULL_HANDLE, &image_index);
     if(result == VK_ERROR_OUT_OF_DATE_KHR) {
         context.old_swapchain = context.swapchain;
         rebuild_swapchain(window->hwnd, context.device, context.surface, context.swapchain, context.old_swapchain);
@@ -33,12 +34,12 @@ void draw(Context& context, PlatformWindow* window) {
         throw std::runtime_error("could not acquire swapchain image");
     }
 
-    vkResetCommandBuffer(context.command_buffer, 0);
-    record_command_buffer(context.swapchain, image_index, context.command_buffer, context.render_pass, context.pipeline);
+    vkResetCommandBuffer(context.command.buffer, 0);
+    record_command_buffer(context.swapchain, image_index, context.command.buffer, context.render_pass, context.pipeline);
 
-    VkSemaphore wait_semaphores[] = { context.sync.semaphores[0] };
+    VkSemaphore wait_semaphores[] = { context.frame_data.begin };
     VkPipelineStageFlags wait_stages[] = { VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT };
-    VkSemaphore signal_semaphores[] = { context.sync.semaphores[1] };
+    VkSemaphore signal_semaphores[] = { context.frame_data.in_flight };
 
     VkSubmitInfo submit_info {
         .sType = VK_STRUCTURE_TYPE_SUBMIT_INFO,
@@ -46,12 +47,12 @@ void draw(Context& context, PlatformWindow* window) {
         .pWaitSemaphores = wait_semaphores,
         .pWaitDstStageMask = wait_stages,
         .commandBufferCount = 1,
-        .pCommandBuffers = &context.command_buffer,
+        .pCommandBuffers = &context.command.buffer,
         .signalSemaphoreCount = 1,
         .pSignalSemaphores = signal_semaphores
     };
 
-    if(vkQueueSubmit(context.queue.graphics, 1, &submit_info, context.sync.fences[0]) != VK_SUCCESS) {
+    if(vkQueueSubmit(context.queue.graphics, 1, &submit_info, context.frame_data.fence) != VK_SUCCESS) {
         throw std::runtime_error("failed to submit draw command buffer");
     }
 
@@ -100,6 +101,7 @@ std::expected<Context, std::string> init_renderer(Renderer& renderer, PlatformWi
     if(!queue_family.has_value()) {
         return std::unexpected("queue_family not found");
     }
+    auto& graphics_queue = queue_family.value().graphics;
 
     context.device.logical = create_logical_device(context.device.physical, queue_family.value(), extensions);
     context.queue = get_render_queue(context.device, queue_family.value().graphics, queue_family.value().presentation);
@@ -117,9 +119,19 @@ std::expected<Context, std::string> init_renderer(Renderer& renderer, PlatformWi
 
     create_framebuffers(context.device, context.swapchain, context.render_pass);
 
-    context.command_pool = create_command_pool(context.device, queue_family.value().graphics);
-    context.command_buffer = create_command_buffer(context.device, context.command_pool);
-    context.sync = create_sync_objects(context.device);
+    auto command_pool = create_command_pool(context.device, graphics_queue);
+    Command command {
+        .pool = command_pool,
+        .buffer = create_command_buffer(context.device, command_pool)
+    };
+    context.command = command;
+
+    FrameData frame_data {
+        .begin = create_semaphore(context.device),
+        .in_flight = create_semaphore(context.device),
+        .fence = create_fence(context.device)
+    };
+    context.frame_data = frame_data;
 
     return context;
 }

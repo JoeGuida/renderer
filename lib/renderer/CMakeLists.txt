@@ -11,6 +11,7 @@ add_library(renderer STATIC
     src/debug_messenger.cpp
     src/device.cpp
     src/extension.cpp
+    src/frame_data.cpp
     src/instance.cpp
     src/pipeline.cpp
     src/queue.cpp

@@ -5,10 +5,11 @@
 
 #include <vulkan/vulkan.hpp>
 
+#include "command.hpp"
 #include "device.hpp"
+#include "frame_data.hpp"
 #include "queue.hpp"
 #include "swapchain.hpp"
-#include "sync.hpp"
 
 struct Context {
     VkInstance instance;
@@ -20,9 +21,8 @@ struct Context {
     Swapchain old_swapchain;
     VkRenderPass render_pass;
     VkPipeline pipeline;
-    VkCommandPool command_pool;
-    VkCommandBuffer command_buffer;
-    Sync sync;
+    Command command;
+    FrameData frame_data;
 };
 
 void destroy_context(const Context& context);

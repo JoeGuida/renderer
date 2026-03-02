@@ -1,19 +1,14 @@
 #include <renderer/context.hpp>
 
 #include <renderer/debug_messenger.hpp>
+#include <renderer/frame_data.hpp>
 
 void destroy_context(const Context& context) {
     vkDeviceWaitIdle(context.device.logical);
 
-    for(auto& semaphore : context.sync.semaphores) {
-        vkDestroySemaphore(context.device.logical, semaphore, nullptr);
-    }
+    destroy(context.device, context.frame_data);
 
-    for(auto& fence : context.sync.fences) {
-        vkDestroyFence(context.device.logical, fence, nullptr);
-    }
-
-    vkDestroyCommandPool(context.device.logical, context.command_pool, nullptr);
+    vkDestroyCommandPool(context.device.logical, context.command.pool, nullptr);
 
     for(auto& framebuffer : context.swapchain.framebuffers) {
         vkDestroyFramebuffer(context.device.logical, framebuffer, nullptr);

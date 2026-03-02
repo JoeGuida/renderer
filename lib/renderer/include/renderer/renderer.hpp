@@ -7,8 +7,7 @@
 
 #include <platform/windows/win32_window.hpp>
 
-#include "context.hpp"
-#include "extension.hpp"
+#include <renderer/core.hpp>
 
 struct Renderer {
 
