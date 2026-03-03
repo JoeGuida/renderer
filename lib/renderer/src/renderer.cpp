@@ -1,19 +1,5 @@
 #include <renderer/renderer.hpp>
 
-#include <renderer/command.hpp>
-#include <renderer/context.hpp>
-#include <renderer/debug_messenger.hpp>
-#include <renderer/device.hpp>
-#include <renderer/extension.hpp>
-#include <renderer/frame_data.hpp>
-#include <renderer/instance.hpp>
-#include <renderer/pipeline.hpp>
-#include <renderer/queue.hpp>
-#include <renderer/render_pass.hpp>
-#include <renderer/surface.hpp>
-#include <renderer/swapchain.hpp>
-#include <renderer/sync.hpp>
-
 void draw(Context& context, PlatformWindow* window) {
     auto [width, height] = get_window_size(window);
     if(width == 0 || height == 0) {
@@ -35,7 +21,7 @@ void draw(Context& context, PlatformWindow* window) {
     }
 
     vkResetCommandBuffer(context.command.buffer, 0);
-    record_command_buffer(context.swapchain, image_index, context.command.buffer, context.render_pass, context.pipeline);
+    record_command_buffer(context.swapchain, image_index, context.command.buffer, context.command.render_passes[0], context.pipeline);
 
     VkSemaphore wait_semaphores[] = { context.frame_data.begin };
     VkPipelineStageFlags wait_stages[] = { VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT };
@@ -114,17 +100,16 @@ std::expected<Context, std::string> init_renderer(Renderer& renderer, PlatformWi
     create_image_views(context.device, swapchain);
     context.swapchain = swapchain;
 
-    context.render_pass = create_render_pass(context.device, swapchain.surface_format.format);
-    context.pipeline = create_graphics_pipeline(context.device, swapchain.extent, context.render_pass);
-
-    create_framebuffers(context.device, context.swapchain, context.render_pass);
-
     auto command_pool = create_command_pool(context.device, graphics_queue);
     Command command {
         .pool = command_pool,
         .buffer = create_command_buffer(context.device, command_pool)
     };
     context.command = command;
+
+    context.command.render_passes.push_back(create_render_pass(context.device, swapchain.surface_format.format));
+    context.pipeline = create_graphics_pipeline(context.device, swapchain.extent, context.command.render_passes[0]);
+    create_framebuffers(context.device, context.swapchain, context.command.render_passes[0]);
 
     FrameData frame_data {
         .begin = create_semaphore(context.device),

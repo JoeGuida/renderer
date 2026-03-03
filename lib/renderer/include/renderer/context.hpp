@@ -19,7 +19,6 @@ struct Context {
     RenderQueue queue;
     Swapchain swapchain;
     Swapchain old_swapchain;
-    VkRenderPass render_pass;
     VkPipeline pipeline;
     Command command;
     FrameData frame_data;

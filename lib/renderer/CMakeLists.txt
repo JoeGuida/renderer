@@ -11,16 +11,17 @@ add_library(renderer STATIC
     src/debug_messenger.cpp
     src/device.cpp
     src/extension.cpp
+    src/fence.cpp
     src/frame_data.cpp
     src/instance.cpp
     src/pipeline.cpp
     src/queue.cpp
     src/render_pass.cpp
     src/renderer.cpp
+    src/semaphore.cpp
     src/shader.cpp
     src/surface.cpp
     src/swapchain.cpp
-    src/sync.cpp
 )
 
 if(WIN32)
