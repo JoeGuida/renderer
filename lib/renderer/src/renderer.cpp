@@ -21,7 +21,7 @@ void draw(Context& context, PlatformWindow* window) {
     }
 
     vkResetCommandBuffer(context.command.buffer, 0);
-    record_command_buffer(context.swapchain, image_index, context.command.buffer, context.command.render_passes[0], context.pipeline);
+    record_command_buffer(context.swapchain, image_index, context.command.buffer, context.command.render_passes[0], context.pipeline.handle);
 
     VkSemaphore wait_semaphores[] = { context.frame_data.begin };
     VkPipelineStageFlags wait_stages[] = { VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT };

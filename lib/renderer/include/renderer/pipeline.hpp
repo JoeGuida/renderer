@@ -6,6 +6,10 @@
 #include <renderer/device.hpp>
 #include <renderer/swapchain.hpp>
 
-VkPipeline create_graphics_pipeline(const Device& device, Extent extent, VkRenderPass render_pass);
+struct Pipeline {
+    VkPipeline handle;
+};
+
+Pipeline create_graphics_pipeline(const Device& device, Extent extent, VkRenderPass render_pass);
 
 #endif

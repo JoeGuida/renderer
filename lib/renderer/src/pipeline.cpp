@@ -4,7 +4,7 @@
 
 #include <renderer/shader.hpp>
 
-VkPipeline create_graphics_pipeline(const Device& device, Extent extent, VkRenderPass render_pass) {
+Pipeline create_graphics_pipeline(const Device& device, Extent extent, VkRenderPass render_pass) {
     Shader vertex {
         .filepath = std::filesystem::current_path() / "shaders" / "vert.spv",
         .stage = ShaderStage::Vertex,
@@ -171,5 +171,7 @@ VkPipeline create_graphics_pipeline(const Device& device, Extent extent, VkRende
     vkDestroyShaderModule(device.logical, fragment.module, nullptr);
     vkDestroyPipelineLayout(device.logical, pipeline_layout, nullptr);
 
-    return graphics_pipeline;
+    return Pipeline {
+        .handle = graphics_pipeline
+    };
 }

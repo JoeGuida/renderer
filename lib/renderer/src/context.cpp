@@ -14,7 +14,7 @@ void destroy_context(const Context& context) {
         vkDestroyFramebuffer(context.device.logical, framebuffer, nullptr);
     }
 
-    vkDestroyPipeline(context.device.logical, context.pipeline, nullptr);
+    vkDestroyPipeline(context.device.logical, context.pipeline.handle, nullptr);
     vkDestroyRenderPass(context.device.logical, context.command.render_passes[0], nullptr);
 
     for(auto& image_view : context.swapchain.image_views) {
