@@ -3,7 +3,7 @@
 #include <renderer/debug_messenger.hpp>
 #include <renderer/frame_data.hpp>
 
-void destroy_context(const Context& context) {
+void destroy(const Context& context) {
     vkDeviceWaitIdle(context.device.logical);
 
     destroy(context.device, context.frame_data);

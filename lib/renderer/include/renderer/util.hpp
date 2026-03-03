@@ -1,6 +1,8 @@
 #ifndef RENDERER_UTIL_HPP
 #define RENDERER_UTIL_HPP
 
+#ifdef VULKAN
+
 #include <utility>
 #include <vector>
 
@@ -9,6 +11,7 @@
 #include <renderer/extension.hpp>
 #include <renderer/queue.hpp>
 #include <renderer/swapchain.hpp>
+
 
 inline bool is_gpu_usable(VkPhysicalDevice device, VkSurfaceKHR surface, const RendererExtensions& extensions) {
     if(!get_queue_family(device, surface).has_value()) {
@@ -36,5 +39,7 @@ inline std::pair<int, int> get_max(const std::vector<int>& scores) {
 
     return { highest_score, index };
 }
+
+#endif
 
 #endif

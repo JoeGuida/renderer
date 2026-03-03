@@ -24,6 +24,6 @@ struct Context {
     FrameData frame_data;
 };
 
-void destroy_context(const Context& context);
+void destroy(const Context& context);
 
 #endif

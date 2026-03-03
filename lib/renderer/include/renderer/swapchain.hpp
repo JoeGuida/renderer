@@ -1,6 +1,8 @@
 #ifndef RENDERER_SWAPCHAIN_HPP
 #define RENDERER_SWAPCHAIN_HPP
 
+#ifdef VULKAN
+
 #include <vector>
 
 #include <vulkan/vulkan.hpp>
@@ -56,5 +58,7 @@ void create_framebuffers(const Device& device, Swapchain& swapchain, VkRenderPas
 void create_image_views(const Device& device, Swapchain& swapchain);
 void destroy_swapchain(Swapchain& swapchain, const Device& device);
 void rebuild_swapchain(HWND hwnd, const Device& device, const Surface& surface, Swapchain& swapchain, Swapchain& old_swapchain);
+
+#endif
 
 #endif

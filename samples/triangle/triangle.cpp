@@ -2,6 +2,7 @@
 
 #include <spdlog/spdlog.h>
 
+#include <renderer/logger.hpp>
 #include <renderer/renderer.hpp>
 #include <window/window.hpp>
 
@@ -39,5 +40,5 @@ int WinMain(HINSTANCE instance, HINSTANCE unused, LPSTR command_line, int show_w
     std::function<void()> draw_callback = [&]() { draw(context.value(), window.handle.get()); };
 
     run_window(window.handle.get(), draw_callback);
-    destroy_context(context.value());
+    destroy(context.value());
 }

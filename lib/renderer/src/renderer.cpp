@@ -1,5 +1,9 @@
 #include <renderer/renderer.hpp>
 
+#include <renderer/fence.hpp>
+#include <renderer/render_pass.hpp>
+#include <renderer/semaphore.hpp>
+
 void draw(Context& context, PlatformWindow* window) {
     auto [width, height] = get_window_size(window);
     if(width == 0 || height == 0) {

@@ -1,6 +1,8 @@
 #ifndef RENDERER_SHADER_HPP
 #define RENDERER_SHADER_HPP
 
+#ifdef VULKAN
+
 #include <cstdint>
 #include <filesystem>
 #include <stdexcept>
@@ -25,5 +27,7 @@ struct Shader {
 
 std::vector<char> read_file(const std::filesystem::path& filepath);
 void create_shader_module(const Device& device, Shader& shader, const std::vector<char>& code);
+
+#endif
 
 #endif

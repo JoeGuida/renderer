@@ -1,6 +1,8 @@
 #ifndef RENDERER_FRAME_DATA_HPP
 #define RENDERER_FRAME_DATA_HPP
 
+#ifdef VULKAN
+
 #include <vulkan/vulkan.hpp>
 
 #include <renderer/device.hpp>
@@ -12,5 +14,7 @@ struct FrameData {
 };
 
 void destroy(const Device& device, const FrameData& frame_data);
+
+#endif
 
 #endif

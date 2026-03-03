@@ -25,10 +25,11 @@ add_library(renderer STATIC
 )
 
 if(WIN32)
-target_compile_definitions(renderer PRIVATE
+    target_compile_definitions(renderer PUBLIC
     UNICODE
     _UNICODE
     WINDOWS
+    VULKAN
 )
 
 target_compile_options(renderer PRIVATE

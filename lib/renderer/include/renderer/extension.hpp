@@ -1,6 +1,8 @@
 #ifndef RENDERER_EXTENSION_HPP
 #define RENDERER_EXTENSION_HPP
 
+#ifdef VULKAN
+
 #include <string>
 #include <unordered_set>
 
@@ -30,5 +32,7 @@ bool instance_extensions_supported(const RendererExtensions& extensions);
 bool device_extensions_supported(VkPhysicalDevice device, const RendererExtensions& extensions);
 bool validation_layers_available(const RendererExtensions& extensions);
 RendererExtensions get_renderer_extensions(const RendererFeatures& features);
+
+#endif
 
 #endif

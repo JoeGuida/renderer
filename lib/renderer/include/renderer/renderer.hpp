@@ -1,12 +1,13 @@
 #ifndef RENDERER_RENDERER_HPP
 #define RENDERER_RENDERER_HPP
 
+#include <expected>
 #include <string>
 
-#include <vulkan/vulkan.hpp>
-
 #include <platform/windows/win32_window.hpp>
-#include <renderer/core.hpp>
+
+#include <renderer/context.hpp>
+#include <renderer/extension.hpp>
 
 struct Renderer {
 
