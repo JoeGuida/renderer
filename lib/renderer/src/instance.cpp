@@ -1,6 +1,6 @@
 #include <renderer/instance.hpp>
 
-VkInstance create_instance(const RendererExtensions& extensions) {
+Instance create_instance(const RendererExtensions& extensions) {
     VkInstance instance;
 
     VkApplicationInfo application_info {
@@ -26,5 +26,7 @@ VkInstance create_instance(const RendererExtensions& extensions) {
         throw std::runtime_error("error creating vk instance");
     }
 
-    return instance;
+    return Instance {
+        .handle = instance
+    };
 }

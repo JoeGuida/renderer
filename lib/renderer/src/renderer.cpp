@@ -79,9 +79,9 @@ std::expected<Context, std::string> init_renderer(Renderer& renderer, PlatformWi
     }
 
     context.instance = create_instance(extensions);
-    context.debug_messenger = setup_debug_messenger(context.instance);
-    context.surface = create_window_surface(context.instance, window, instance);
-    context.device.physical = create_physical_device(context.instance, context.surface.handle, extensions);
+    context.debug_messenger = setup_debug_messenger(context.instance.handle);
+    context.surface = create_window_surface(context.instance.handle, window, instance);
+    context.device.physical = create_physical_device(context.instance.handle, context.surface.handle, extensions);
 
     auto queue_family = get_queue_family(context.device.physical, context.surface.handle);
     if(!queue_family.has_value()) {

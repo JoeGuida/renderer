@@ -28,14 +28,14 @@ VkResult create_debug_utils_messenger_ext(VkInstance instance, const VkDebugUtil
     return VK_ERROR_EXTENSION_NOT_PRESENT;
 }
 
-void destroy_debug_utils_messenger_ext(VkInstance instance, VkDebugUtilsMessengerEXT debug_messenger) {
+void destroy_debug_utils_messenger_ext(VkInstance instance, const DebugMessenger& debug_messenger) {
     auto destroy = (PFN_vkDestroyDebugUtilsMessengerEXT) vkGetInstanceProcAddr(instance, "vkDestroyDebugUtilsMessengerEXT");
     if(destroy) {
-        destroy(instance, debug_messenger, nullptr);
+        destroy(instance, debug_messenger.handle, nullptr);
     }
 }
 
-VkDebugUtilsMessengerEXT setup_debug_messenger(VkInstance instance) {
+DebugMessenger setup_debug_messenger(VkInstance instance) {
     VkDebugUtilsMessengerCreateInfoEXT create_info {
         .sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT,
         .messageSeverity = VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT,
@@ -49,5 +49,7 @@ VkDebugUtilsMessengerEXT setup_debug_messenger(VkInstance instance) {
         throw std::runtime_error("failed to set up debug messenger");
     }
 
-    return debug_messenger;
+    return DebugMessenger {
+        .handle = debug_messenger
+    };
 }

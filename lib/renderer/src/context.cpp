@@ -22,8 +22,8 @@ void destroy_context(const Context& context) {
     }
 
     vkDestroySwapchainKHR(context.device.logical, context.swapchain.handle, nullptr);
-    vkDestroySurfaceKHR(context.instance, context.surface.handle, nullptr);
+    vkDestroySurfaceKHR(context.instance.handle, context.surface.handle, nullptr);
     vkDestroyDevice(context.device.logical, nullptr);
-    destroy_debug_utils_messenger_ext(context.instance, context.debug_messenger);
-    vkDestroyInstance(context.instance, nullptr);
+    destroy_debug_utils_messenger_ext(context.instance.handle, context.debug_messenger);
+    vkDestroyInstance(context.instance.handle, nullptr);
 }
