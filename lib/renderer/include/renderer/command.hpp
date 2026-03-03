@@ -5,8 +5,8 @@
 
 #include <vulkan/vulkan.hpp>
 
-#include "device.hpp"
-#include "swapchain.hpp"
+#include <renderer/device.hpp>
+#include <renderer/swapchain.hpp>
 
 struct Command {
     VkCommandPool pool;

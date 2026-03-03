@@ -3,7 +3,7 @@
 
 #include <vulkan/vulkan.hpp>
 
-#include "device.hpp"
+#include <renderer/device.hpp>
 
 VkSemaphore create_semaphore(const Device& device);
 

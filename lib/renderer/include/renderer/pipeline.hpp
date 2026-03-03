@@ -3,8 +3,8 @@
 
 #include <vulkan/vulkan.hpp>
 
-#include "device.hpp"
-#include "swapchain.hpp"
+#include <renderer/device.hpp>
+#include <renderer/swapchain.hpp>
 
 VkPipeline create_graphics_pipeline(const Device& device, Extent extent, VkRenderPass render_pass);
 

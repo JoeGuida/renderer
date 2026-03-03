@@ -3,11 +3,10 @@
 
 #include <vector>
 
-#include <platform/platform.hpp>
-
 #include <vulkan/vulkan.hpp>
 
-#include "device.hpp"
+#include <platform/platform.hpp>
+#include <renderer/device.hpp>
 
 struct Extent {
     uint32_t width;

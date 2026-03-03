@@ -8,7 +8,7 @@
 
 #include <vulkan/vulkan.hpp>
 
-#include "device.hpp"
+#include <renderer/device.hpp>
 
 enum class ShaderStage : uint32_t {
     Vertex   = VK_SHADER_STAGE_VERTEX_BIT,

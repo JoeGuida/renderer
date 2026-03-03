@@ -3,12 +3,11 @@
 
 #include <string>
 #include <unordered_set>
-#include <vector>
 
 #include <vulkan/vulkan.hpp>
 
-#include "device.hpp"
-#include "renderer_extensions.hpp"
+#include <renderer/device.hpp>
+#include <renderer/renderer_extensions.hpp>
 
 struct RendererFeatures {
     bool debug;

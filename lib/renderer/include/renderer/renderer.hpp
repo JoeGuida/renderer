@@ -6,7 +6,6 @@
 #include <vulkan/vulkan.hpp>
 
 #include <platform/windows/win32_window.hpp>
-
 #include <renderer/core.hpp>
 
 struct Renderer {

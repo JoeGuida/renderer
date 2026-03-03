@@ -3,7 +3,7 @@
 
 #include <vulkan/vulkan.hpp>
 
-#include "device.hpp"
+#include <renderer/device.hpp>
 
 struct FrameData {
     VkSemaphore begin;

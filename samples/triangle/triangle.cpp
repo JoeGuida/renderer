@@ -2,8 +2,6 @@
 
 #include <spdlog/spdlog.h>
 
-#include <renderer/extension.hpp>
-#include <renderer/logger.hpp>
 #include <renderer/renderer.hpp>
 #include <window/window.hpp>
 

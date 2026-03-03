@@ -1,15 +1,13 @@
 #ifndef RENDERER_CONTEXT_HPP
 #define RENDERER_CONTEXT_HPP
 
-#include <vector>
-
 #include <vulkan/vulkan.hpp>
 
-#include "command.hpp"
-#include "device.hpp"
-#include "frame_data.hpp"
-#include "queue.hpp"
-#include "swapchain.hpp"
+#include <renderer/command.hpp>
+#include <renderer/device.hpp>
+#include <renderer/frame_data.hpp>
+#include <renderer/queue.hpp>
+#include <renderer/swapchain.hpp>
 
 struct Context {
     VkInstance instance;

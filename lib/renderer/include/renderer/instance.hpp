@@ -3,7 +3,7 @@
 
 #include <vulkan/vulkan.hpp>
 
-#include "extension.hpp"
+#include <renderer/renderer_extensions.hpp>
 
 VkInstance create_instance(const RendererExtensions& extensions);
 

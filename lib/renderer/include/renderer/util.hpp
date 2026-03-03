@@ -6,9 +6,9 @@
 
 #include <vulkan/vulkan.hpp>
 
-#include "extension.hpp"
-#include "queue.hpp"
-#include "swapchain.hpp"
+#include <renderer/extension.hpp>
+#include <renderer/queue.hpp>
+#include <renderer/swapchain.hpp>
 
 inline bool is_gpu_usable(VkPhysicalDevice device, VkSurfaceKHR surface, const RendererExtensions& extensions) {
     if(!get_queue_family(device, surface).has_value()) {

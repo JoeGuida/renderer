@@ -6,7 +6,7 @@
 
 #include <vulkan/vulkan.hpp>
 
-#include "device.hpp"
+#include <renderer/device.hpp>
 
 struct RenderQueue {
     VkQueue graphics;
