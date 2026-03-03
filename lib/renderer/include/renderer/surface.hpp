@@ -8,6 +8,10 @@
 
 #include <platform/windows/win32_window.hpp>
 
-VkSurfaceKHR create_window_surface(VkInstance vk_instance, PlatformWindow* window, HINSTANCE instance);
+struct Surface {
+    VkSurfaceKHR handle;
+};
+
+Surface create_window_surface(VkInstance vk_instance, PlatformWindow* window, HINSTANCE instance);
 
 #endif

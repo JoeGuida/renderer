@@ -7,6 +7,7 @@
 
 #include <platform/platform.hpp>
 #include <renderer/device.hpp>
+#include <renderer/surface.hpp>
 
 struct Extent {
     uint32_t width;
@@ -47,13 +48,13 @@ struct SwapchainSupportInfo {
     std::vector<VkPresentModeKHR> present_modes;
 };
 
-void create_swapchain(HWND hwnd, const Device& device, VkSurfaceKHR surface, Swapchain& swapchain, VkSurfaceFormatKHR format, VkPresentModeKHR present_mode, Swapchain* old_swapchain);
+void create_swapchain(HWND hwnd, const Device& device, const Surface& surface, Swapchain& swapchain, VkSurfaceFormatKHR format, VkPresentModeKHR present_mode, Swapchain* old_swapchain);
 SwapchainSupportInfo query_swapchain_support(VkPhysicalDevice device, VkSurfaceKHR surface);
 VkSurfaceFormatKHR choose_surface_format(const std::vector<VkSurfaceFormatKHR>& available_formats, VkFormat format, VkColorSpaceKHR color_space);
 VkPresentModeKHR choose_present_mode(const std::vector<VkPresentModeKHR>& available_present_modes, VkPresentModeKHR mode);
 void create_framebuffers(const Device& device, Swapchain& swapchain, VkRenderPass render_pass);
 void create_image_views(const Device& device, Swapchain& swapchain);
 void destroy_swapchain(Swapchain& swapchain, const Device& device);
-void rebuild_swapchain(HWND hwnd, const Device& device, VkSurfaceKHR surface, Swapchain& swapchain, Swapchain& old_swapchain);
+void rebuild_swapchain(HWND hwnd, const Device& device, const Surface& surface, Swapchain& swapchain, Swapchain& old_swapchain);
 
 #endif

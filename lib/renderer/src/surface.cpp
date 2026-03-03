@@ -1,6 +1,6 @@
 #include <renderer/surface.hpp>
 
-VkSurfaceKHR create_window_surface(VkInstance vk_instance, PlatformWindow* window, HINSTANCE instance) {
+Surface create_window_surface(VkInstance vk_instance, PlatformWindow* window, HINSTANCE instance) {
     VkSurfaceKHR surface;
 
     VkWin32SurfaceCreateInfoKHR create_info {
@@ -13,5 +13,7 @@ VkSurfaceKHR create_window_surface(VkInstance vk_instance, PlatformWindow* windo
         throw std::runtime_error("failed to create window surface");
     }
 
-    return surface;
+    return Surface {
+        .handle = surface
+    };
 }

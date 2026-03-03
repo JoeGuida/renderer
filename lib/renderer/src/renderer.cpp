@@ -81,9 +81,9 @@ std::expected<Context, std::string> init_renderer(Renderer& renderer, PlatformWi
     context.instance = create_instance(extensions);
     context.debug_messenger = setup_debug_messenger(context.instance);
     context.surface = create_window_surface(context.instance, window, instance);
-    context.device.physical = create_physical_device(context.instance, context.surface, extensions);
+    context.device.physical = create_physical_device(context.instance, context.surface.handle, extensions);
 
-    auto queue_family = get_queue_family(context.device.physical, context.surface);
+    auto queue_family = get_queue_family(context.device.physical, context.surface.handle);
     if(!queue_family.has_value()) {
         return std::unexpected("queue_family not found");
     }
@@ -100,11 +100,9 @@ std::expected<Context, std::string> init_renderer(Renderer& renderer, PlatformWi
     create_image_views(context.device, swapchain);
     context.swapchain = swapchain;
 
-    auto command_pool = create_command_pool(context.device, graphics_queue);
-    Command command {
-        .pool = command_pool,
-        .buffer = create_command_buffer(context.device, command_pool)
-    };
+    Command command;
+    command.pool = create_command_pool(context.device, graphics_queue);
+    command.buffer = create_command_buffer(context.device, command.pool);
     context.command = command;
 
     context.command.render_passes.push_back(create_render_pass(context.device, swapchain.surface_format.format));

@@ -7,13 +7,14 @@
 #include <renderer/device.hpp>
 #include <renderer/frame_data.hpp>
 #include <renderer/queue.hpp>
+#include <renderer/surface.hpp>
 #include <renderer/swapchain.hpp>
 
 struct Context {
     VkInstance instance;
     VkDebugUtilsMessengerEXT debug_messenger;
     Device device;
-    VkSurfaceKHR surface;
+    Surface surface;
     RenderQueue queue;
     Swapchain swapchain;
     Swapchain old_swapchain;

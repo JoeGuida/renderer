@@ -2,8 +2,8 @@
 
 #include <algorithm>
 
-void create_swapchain(HWND hwnd, const Device& device, VkSurfaceKHR surface, Swapchain& swapchain, VkSurfaceFormatKHR format, VkPresentModeKHR present_mode, Swapchain* old_swapchain) {
-    SwapchainSupportInfo info = query_swapchain_support(device.physical, surface);
+void create_swapchain(HWND hwnd, const Device& device, const Surface& surface, Swapchain& swapchain, VkSurfaceFormatKHR format, VkPresentModeKHR present_mode, Swapchain* old_swapchain) {
+    SwapchainSupportInfo info = query_swapchain_support(device.physical, surface.handle);
     VkSurfaceFormatKHR surface_format = choose_surface_format(info.formats, format.format, format.colorSpace);
     swapchain.surface_format = surface_format;
     swapchain.present_mode = choose_present_mode(info.present_modes, present_mode);
@@ -35,7 +35,7 @@ void create_swapchain(HWND hwnd, const Device& device, VkSurfaceKHR surface, Swa
 
     VkSwapchainCreateInfoKHR create_info {
         .sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR,
-        .surface = surface,
+        .surface = surface.handle,
         .minImageCount = image_count,
         .imageFormat = swapchain.surface_format.format,
         .imageColorSpace = swapchain.surface_format.colorSpace,
@@ -176,7 +176,7 @@ void destroy_swapchain(Swapchain& swapchain, const Device& device) {
     vkDestroySwapchainKHR(device.logical, swapchain.handle, nullptr);
 }
 
-void rebuild_swapchain(HWND hwnd, const Device& device, VkSurfaceKHR surface, Swapchain& swapchain, Swapchain& old_swapchain) {
+void rebuild_swapchain(HWND hwnd, const Device& device, const Surface& surface, Swapchain& swapchain, Swapchain& old_swapchain) {
     vkDeviceWaitIdle(device.logical);
     VkSurfaceFormatKHR format {
         .format = old_swapchain.surface_format.format,
