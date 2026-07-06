@@ -11,5 +11,5 @@ add_subdirectory(renderer)
 
 add_library(engine INTERFACE)
 
-target_link_libraries(engine INTERFACE window renderer-lib)
+target_link_libraries(engine INTERFACE renderer)
 
