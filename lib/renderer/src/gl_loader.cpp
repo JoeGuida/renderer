@@ -206,3 +206,4 @@ std::expected<void, std::string> load_gl_functions() {
     loaded = true;
     return {};
 }
+

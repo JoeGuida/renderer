@@ -63,3 +63,4 @@ std::expected<void, std::string> initialize_opengl(PlatformWindow* handle) {
     handle->hglrc = hglrc;
     return {};
 }
+
